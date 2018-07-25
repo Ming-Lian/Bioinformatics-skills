@@ -77,8 +77,19 @@ ARO:0000003	astromicin	Astromicin is an aminoglycoside antibiotic used to treat 
 由于RGI的预测基于多种预测模型，包括：
 
 - protein homolog model
+
+> Protein homolog models detect a protein sequence based on its similarity to a curated reference sequence. A protein homolog model has only one parameter: a curated BLASTP bitscore cutoff for determining the strength of a match.
+
 - protein knockout model
+
+> An AMR detection model for instances where the absence of a protein - due to large-scale insertion elements, large deletions, or other methods of protein knockout - confers clinical resistance to a known antibiotic. These models include reference sequences. Protein knockout models are currently in development.
+>
+> Bit-score Cut-off: 750
+
 - protein over-expression model
+
+> This model detects protein overexpression based on the presence of mutations. The detection of the protein without an associated mutation indicates that the protein is likely to be expressed at low or basal levels. The detection of the protein with the mutation indicates that the protein is likely overexpressed. 
+
 - protein variant model
 
 而每种模型对序列的要求都有所不同，所以开发人员对不同的预测模型整理了各自对应的序列集合，而且每种模型都需要分别整理核酸序列和蛋白质序列，所以得到以下系列序列文件：
