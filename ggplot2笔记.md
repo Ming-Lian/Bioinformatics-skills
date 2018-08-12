@@ -4,7 +4,7 @@
 - [直方图：geom_histogram](#histogram)
 - [柱状图：geom_bar](#bar)
 - [控制整体图形属性](#whole-plot-style)
-	- [标尺（Scale）]($scale)
+	- [标尺（Scale）](#scale)
 	- [标题](#plot-title)
 - [统计变换（Statistics）](#statistics)
 - [坐标系统（Coordinante）](#coordinante)
