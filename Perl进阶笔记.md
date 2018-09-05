@@ -5,7 +5,10 @@
 - [Getopt::Long](#getopt-long)
 - [perl单行](#perl-command-one-line)
 - [使用Hash遇到的坑](#notice-when-using-hash)
-
+- [安装Perl模块](#install-perl-module)
+	- [使用CPAN模块自动安装](#use-cpan-module)
+	- [手工安装](#install-manually)
+	- [非root用户的另一个解决方案](#install-way-for-unroot)
 
 
 
@@ -103,3 +106,110 @@ while(<IN>){
 }
 ```
 
+<a name="install-perl-module"><h2>安装Perl模块 [<sup>目录</sup>](#content)</h2></a>
+
+查看perl模块的安装目录，主要就是@INC这个默认变量 
+
+```
+perl -e '{print "$_\n" foreach @INC}'
+```
+
+查看已安装的Perl模块：
+
+```
+# 查看系统中安装的Perl模块
+find  `perl -e 'print "@INC"'` -name '*.pm'
+# 查看当前环境下所有的模块（一般为用户自己安装的）
+instmodsh
+```
+
+查询单个perl模块的安装路径：
+
+```
+perldoc -l Getopt::Long
+```
+
+查看安装的perl模块的版本号
+
+```
+perl -MGetopt::Long -e 'print Getopt::Long->VERSION. "\n"'
+```
+
+装Perl模块有两种方法
+
+
+- 自动安装 (使用CPAN模块自动完成下载、编译、安装的全过程)
+- 手工安装 (去CPAN网站下载所需要的模块，手工编译、安装)
+
+<a name="use-cpan-module"><h3>使用CPAN模块自动安装 [<sup>目录</sup>](#content)</h3></a>
+
+安装前需要先联上网，**有无root权限均可**
+
+```
+$ perl -MCPAN -e shell
+```
+
+```
+cpan>help
+cpan>m
+cpan>install Net::Server
+cpan>quit
+```
+
+> - 查询：cpan[1]> d /模块名字或者部分名字/
+> 
+> 查询结果中会给出所有含有模块名字或者部分名字的模块，选择您所需要的模块进行下载
+> 
+> - 下载安装：cpan[1]> install 模块名字
+> 
+> 同时会自动安装很多依赖的模块，非常方便。
+
+<a name="install-manually"><h3>手工安装 [<sup>目录</sup>](#content)</h3></a>
+
+> 一般情况下不推荐这种安装方式，但是总是会有**迫不得已**的时候，而且尝试这种方式，能加深对perl模块的理解。
+
+比如从 CPAN下载了Net-Server模块0.97版的压缩文件Net-Server-0.97.tar.gz，假设放在/usr/local/src/下。
+
+```
+cd /usr/local/src
+tar xvzf Net-Server-0.97.tar.gz
+cd Net-Server-0.97
+perl Makefile.PL
+make test
+```
+
+
+
+如果测试结果报告`all test ok`，你就可以放心地安装编译好的模块了。
+
+<a name="install-way-for-unroot"><h3>非root用户的另一个解决方案 [<sup>目录</sup>](#content)</h3></a>
+
+手动下载local::lib, 这个perl模块，然后自己安装在指定目录，也是能解决模块的问题！
+
+下载之后解压，进入：
+
+```
+perl Makefile.PL --bootstrap=~/.perl ##这里设置你想把模块放置的目录
+make test && make install
+echo 'eval $(perl -I$HOME/.perl/lib/perl5 -Mlocal::lib=$HOME/.perl)' >> ~/.bashrc ##目录与前面要一致
+```
+
+等待几个小时即可！！！
+
+添加好环境变量之后，就可以用
+
+```
+perl -MCPAN -Mlocal::lib -e 'CPAN::install(LWP)'
+```
+
+或有更简单的写法：
+
+```
+cpanm --local-lib=~/perl5 local::lib && eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)
+```
+
+---
+
+参考资料：
+
+(1) [生信菜鸟团：perl模块安装大全](http://www.bio-info-trainee.com/2451.html)
