@@ -6,6 +6,7 @@
 - [控制整体图形属性](#whole-plot-style)
 	- [标尺（Scale）](#scale)
 	- [标题](#plot-title)
+	- [图例](#legend)
 - [统计变换（Statistics）](#statistics)
 - [坐标系统（Coordinante）](#coordinante)
 - [分面（Facet）](#facet)
@@ -66,6 +67,18 @@ ggplot()+geom_bar(aes(x=c(LETTERS[1:3]),y=1:3), stat="identity")
 ```
 p + ggtitle("Price vs Cut")+xlab("Cut")+ylab("Price")
 ```
+
+同时设置图像标题、X轴标题、Y轴标题：`labs`
+
+```
+labs(x="Cut",y="Price",title="Price vs Cut")
+```
+
+标题居中：`theme(plot.title=element_text(hjust=0.5))`
+
+<a name="legend"><h3>图例 [<sup>目录</sup>](#content)</h3></a>
+
+隐藏图例：`theme(legend.position="none")`
 
 <a name="statistics"><h2>统计变换（Statistics） [<sup>目录</sup>](#content)</h2></a>
 
