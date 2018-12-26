@@ -43,7 +43,7 @@
 $ ls bins | while read i;
 do
 	echo -ne "$i\t";
-	bioawk -c fastx '{len+=length($seq)}END{print len}' bins/$i
+	bioawk -c fastx '{len+=length($seq)}END{print len}' bins/$i;
 done >mappingLen.stat
 ```
 
@@ -53,7 +53,7 @@ done >mappingLen.stat
 $ ls ref | while read i;
 do
 	echo -ne "$i\t";
-	bioawk -c fastx '{print length($seq)}' ref/$i
+	bioawk -c fastx '{print length($seq)}' ref/$i;
 done >refLen.stat
 ```
 
