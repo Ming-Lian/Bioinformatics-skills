@@ -9,7 +9,7 @@
 	- [使用CPAN模块自动安装](#use-cpan-module)
 	- [手工安装](#install-manually)
 	- [非root用户的另一个解决方案](#install-way-for-unroot)
-
+- [循环匹配](#loop-matching)
 
 
 
@@ -208,8 +208,63 @@ perl -MCPAN -Mlocal::lib -e 'CPAN::install(LWP)'
 cpanm --local-lib=~/perl5 local::lib && eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)
 ```
 
+<a name="loop-matching"><h2>循环匹配 [<sup>目录</sup>](#content)</h2></a>
+
+在李恒的github博客 [On the definition of sequence identity](http://lh3.github.io/2018/11/25/on-the-definition-of-sequence-identity) 当中看到这样一个Perl单行代码：
+
+```
+$ perl -ane 'if(/NM:i:(\d+)/){$n=$1;$l=0;$l+=$1 while/(\d+)[MID]/g;print(($l-$n)/$l,"\n")}'
+```
+
+这行代码的目的是为了计算SAM文件中每条记录BLAST identity
+
+> BLAST identity是根据你比对到的碱基除去比对所涉及到的columns数目，换句话来说就是比对涉及到所有的碱基数目
+> 
+> 例如这样的双序列比对：
+> 
+> ```
+> Ref+:  1 CCAGTGTGGCCGATaCCCcagGTtgGC-ACGCATCGTTGCCTTGGTAAGC 49
+>          |||||||||||||| |||   ||  || ||||||||||||||||||||||
+> Qry+:  1 CCAGTGTGGCCGATgCCC---GT--GCtACGCATCGTTGCCTTGGTAAGC 45
+> ```
+> 
+> 它们的BLAST identity就是`43/50=86%`
+
+那么要计算SAM文件中每条reads的BLAST identity，总长可以通过叠加CIGAR中对应的`M/I/D`的数目得到，比对到的碱基数目等于总长减去NMtag（比对不上的碱基位置的标记）
+
+<p align="center"><img src=/picture/Advanced-Perl-SAM-NMtag.png width=600 /></p>
+
+李恒的这行代码中有一部分一开始没有读懂，就是下图红框中的那部分：
+
+<p align="center"><img src=/picture/Advanced-Perl-lh-code.png width=600 /></p>
+
+其实这是一种简写方式，正规完整且更容易读懂的形式可以写成下面这样：
+
+```
+# 这里为了更好看，添加了适当的换行和缩进
+
+$ perl -ane \
+'if(/NM:i:(\d+)/){
+	$n=$1;
+	$l=0;
+	while(/(\d+)[MID]/g){
+		$l+=$1;
+	}
+	print(($l-$n)/$l,"\n");
+}
+'
+```
+
+`while(/(\d+)[MID]/g)`中的正则表达式`/(\d+)[MID]/g`，引起了我极大的好奇：它是在正则表达式后面添加了一个`g`字符，即开启了全局匹配，又由于是在`while( )`中进行的正则匹配，等于是开启了循环匹配，即对于CIGAR字符串`18M3D22M`，正则表达式`/(\d+)[MID]/g`，先会匹配上`18M`，然后会匹配上`3D`，最后匹配上`22M`
+
+很有意思的用法
+
 ---
 
 参考资料：
 
 (1) [生信菜鸟团：perl模块安装大全](http://www.bio-info-trainee.com/2451.html)
+
+(2) [Heng Li's blog: On the definition of sequence identity](#http://lh3.github.io/2018/11/25/on-the-definition-of-sequence-identity)
+
+(3) [【简书】生信杂谈：怎样定义sequences比对的相似度？](https://www.jianshu.com/p/9539f44ecf61)
