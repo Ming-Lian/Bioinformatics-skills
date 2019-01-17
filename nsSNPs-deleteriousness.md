@@ -2,7 +2,9 @@
 
 [nsSNPs致病性分析](#title)
 - [1. 自己写脚本分析蛋白质保守性](#self-build-script-for-conservation)
-
+- [2. nsSNV有害性评估工具测评](#compare-deleteriousness-prediction-methods)
+	- [2.1. 简述](#compare-deleteriousness-prediction-methods-abstract)
+	- [2.2. 数据集说明](#compare-deleteriousness-prediction-methods-datasets-description)
 
 
 
@@ -201,4 +203,101 @@
 
 	由于脚本中添加了详细的注释，这里就不展开讲解了
 
+<a name="compare-deleteriousness-prediction-methods"><h2>2. nsSNV有害性评估工具测评 [<sup>目录</sup>](#content)</h2></a>
 
+<a name="compare-deleteriousness-prediction-methods-abstract"><h3>2.1. 简述 [<sup>目录</sup>](#content)</h3></a>
+
+测评的工具：
+
+> - 11款功能影响预测工具 (function prediction scores)：
+> 	1. PolyPhen-2
+> 	2. SIFT
+> 	3. MutationTaster
+> 	4. Mutation Assessor
+> 	5. FATHMM
+> 	6. LRT
+> 	7. PANTHER
+> 	8. PhD-SNP
+> 	9. SNAP
+> 	10. SNPs&GO
+> 	11. MutPred
+> - 3款保守性评估工具 (conservation scores)：
+> 	1. GERP++
+> 	2. SiPhy
+> 	3. PhyloP
+> - 4款综合评估工具 (ensemble scores)：
+> 	1. CADD
+> 	2. PON-P
+> 	3. KGGSeq
+> 	4. CONDEL
+
+评估的结论是：
+
+> 独立的打分工具中，FATHMM表现最优；
+> 
+> 综合评估工具中，KGGSeq表现最优；
+
+<a name="compare-deleteriousness-prediction-methods-datasets-description"><h3>2.2. 数据集说明 [<sup>目录</sup>](#content)</h3></a>
+
+评估中所使用的数据集，共4个，如下表：
+
+| Dataset | Training dataset | Testing dataset I | Testing dataset II | Testing dataset III|
+|:---|:---|:---|:---|
+| TP | 14 191 | 120 | 6279 | 0 |
+| TN| 22 001 | 124 | 13 240 | 10 164 |
+| Total | 36 192 | 244 | 19 519 | 10 164 |
+| Source | Uniprot database | Recent Nature Genetics publications for TP variants <br> <br>CHARGE database for TN variants | VariBench dataset II without mutations in training dataset | CHARGE database |
+
+> - TP: true positive, number of deleterious mutations that were treated as TP observations in modeling. 
+> 
+> - TN: true negative, number of non-deleterious mutations that were treated as true negative observations in modeling.
+> 
+> TN包括常见变异（common variants，MMAF>1%，1000 Genomes project）和罕见变异（rare variants，MMAF ≤1%）
+> 
+> - Total: total number of mutations for each dataset (Total = TP + TN).
+
+
+其中`Training dataset`作为训练集，用于训练SVM和LR（logistic回归）模型（这两个是作者在额外开发的工具），另外3个数据作为测试集，用于测试作者开发的工具与其他工具的性能
+
+在整理测试数据集时，为了降低潜在的bias，从3个不同的数据来源搜集数据：
+
+> - **Testing dataset I**
+> 
+> 	120 TP observations that are deleterious variants recently reported to cause Mendelian diseases, diseases caused by single-gene defects, with experimental support in 57 recent publications (after 1 January 2011) from the journal Nature Genetics
+> 
+> 	124 TN observations that are common neutral variants (MMAF >1%) newly discovered from participants free of Mendelian disease from the Atherosclerosis Risk in Communities (ARIC) study (32) via the Cohorts for Heart and Aging Research in Genomic Epidemiology (CHARGE) sequencing project 
+> 
+> - **Testing dataset II**
+> 
+> 	Testing dataset II is derived from the VariBench (13) dataset II, a benchmark dataset used for performance evaluation of nsSNV scoring methods. 
+> 
+> 	Because VariBench dataset II contains mutations that overlap our training dataset, we removed these mutations and curated 6279 deleterious variants as our TP observations and 13 240 common neutral variants (MMAF >1%) as our TN observations.
+> 
+> - **Testing dataset III**
+> 
+> 	只搜集罕见中性变异 (rare neutral mutations)
+> 
+> 	Testing dataset III that contains 10 164 rare neutral mutations (singletons) from 824 European Americans from the cohort random samples of the ARIC study (32) via the CHARGE sequencing project
+
+同时，测试集的选择还要避免与待评估工具的训练数据发生重叠，由于测试集I和III都是从最新的研究项目和文献中整理的，测试集II一般被用作工具性能比较的benchmark，都不太可能被用作那些待评估工具的训练集
+
+因此，这些测试集在构造上bias比较低
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+参考资料：
+
+(1) Dong C, Wei P, Jian X, et al. Comparison and integration of deleteriousness prediction methods for nonsynonymous SNVs in whole exome sequencing studies. Hum Mol Genet. 2014;24(8):2125-37. 
