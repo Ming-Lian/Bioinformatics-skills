@@ -5,6 +5,7 @@
 - [2. nsSNV有害性评估工具测评](#compare-deleteriousness-prediction-methods)
 	- [2.1. 简述](#compare-deleteriousness-prediction-methods-abstract)
 	- [2.2. 数据集说明](#compare-deleteriousness-prediction-methods-datasets-description)
+	- [2.3. 模型训练](#compare-deleteriousness-prediction-methods-training-models)
 
 
 
@@ -283,7 +284,38 @@
 
 因此，这些测试集在构造上bias比较低
 
+<a name="compare-deleteriousness-prediction-methods-training-models"><h3>2.3. 模型训练 [<sup>目录</sup>](#content)</h3></a>
 
+对于每个nsSNV位点，SVM和LR模型能基于其他工具给出的**分值**和**千人基因组MMAF**给出综合性评分
+
+分值数据采用9个工具的：SIFT, PolyPhen-2, GERP++, MutationTaster, Mutation Assessor, FATHMM, LRT, SiPhy and PhyloP
+
+各个工具的分值数据的缺失情况：
+
+|	Dataset	|	Training dataset (%)	|	Testing dataset I (%)	|	Testing dataset II (%)	|	Testing dataset III (%)	|
+|:---|:---|:---|:---|:---|
+|	SIFT	|	6.91	|	2.87	|	3.83	|	3.96	|
+|	PolyPhen-2	|	3.79	|	2.87	|	0.55	|	0.02	|
+|	LRT	|	10.49	|	13.93	|	7.97	|	11.33	|
+|	MutationTaster	|	0.04	|	0.41	|	0.1	|	0.11	|
+|	Mutation Assessor	|	1.51	|	3.69	|	2.23	|	2.67	|
+|	FATHMM	|	4.05	|	5.73	|	3.48	|	6.69	|
+|	GERP++	|	0	|	0	|	0	|	0.01	|
+|	PhyloP	|	0	|	0	|	0	|	0	|
+|	SiPhy	|	0	|	0	|	0	|	0.285	|
+|	PON-P	|	NA	|	13.93	|	NA	|	NA	|
+|	PANTHER	|	NA	|	47.95	|	NA	|	NA	|
+|	PhD-SNP	|	NA	|	6.56	|	NA	|	NA	|
+|	SNAP	|	NA	|	9.02	|	NA	|	NA	|
+|	SNPs&GO	|	NA	|	15.98	|	NA	|	NA	|
+|	MutPred	|	NA	|	7.37	|	NA	|	NA	|
+|	KGGSeq	|	NA	|	0.82	|	0.05	|	0.82	|
+|	CONDEL	|	NA	|	0.41	|	0.0003	|	0.32	|
+|	CADD	|	0	|	0	|	0	|	0	|
+
+对于缺失数据采用合适的数据填充方法
+
+SVM模型的训练使用了3种核函数：linear，radial 和 polynomial kernel
 
 
 
