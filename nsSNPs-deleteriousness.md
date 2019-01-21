@@ -6,7 +6,13 @@
 	- [2.1. 简述](#compare-deleteriousness-prediction-methods-abstract)
 	- [2.2. 数据集说明](#compare-deleteriousness-prediction-methods-datasets-description)
 	- [2.3. 模型训练](#compare-deleteriousness-prediction-methods-training-models)
-
+- [3. 现有工具及其原理](#exist-tools)
+	- [3.1. SIFT](#sift)
+	- [3.2. Polyphen2](#polyphen2)
+	- [3.3. CADD](#cadd)
+	- [3.4. DANN](#dann)
+	- [3.5. MetaSVM](#metasvm)
+	- [3.6. dbNSFP数据库：整合多种nsSNP预测工具的结果](#dbnsfp)
 
 
 
@@ -317,6 +323,162 @@
 
 SVM模型的训练使用了3种核函数：linear，radial 和 polynomial kernel
 
+<a name="exist-tools"><h2>3. 现有工具及其原理 [<sup>目录</sup>](#content)</h2></a>
+
+<a name="sift"><h3>3.1 SIFT [<sup>目录</sup>](#content)</h3></a>
+
+<p align="center"><img src=./picture/conservative_exist-tools-SIFT-1.png width=800 /></p>
+
+<p align="center"><img src=./picture/conservative_exist-tools-SIFT-2.png width=800 /></p>
+
+算法说明：
+
+```
+For a given protein sequence, SIFT compiles a dataset of functionally related protein sequences by searching a protein database
+ using the PSI-BLAST algorithm6. It then builds an alignment from the homologous sequences with the query sequence. 
+
+In the second step of the algorithm, SIFTscans each position in the alignment and calculates the probabilities for all possible
+ 20 amino acids at that position. These probabilities are normalized by the probability of the most frequent amino acid and are
+ recorded in a scaled probability matrix. 
+
+SIFT predicts a substitution to affect protein function if the scaled probability, also termed the SIFTscore, lies below a certain
+ threshold value. Generally, a highly conserved position is intolerant to most substitutions, whereas a poorly conserved position
+ can tolerate most substitutions
+```
+
+计算某个位点保守性的公式：
+
+<p align="center"><img src=./picture/conservative_exist-tools-SIFT-3.png width=300 /></p>
+
+P<sub>ca</sub>的计算方法——基于伪计数得到校正的PSSM：
+
+<p align="center"><img src=./picture/conservative_exist-tools-SIFT-4.gif width=300 /></p>
+
+> N<sub>c</sub>：实际得到的同源序列数
+> g<sub>ca</sub>：目标序列c位点出现a氨基酸的实际频率
+> B<sub>c</sub>：伪计数，未观察到的同源序列数
+> f<sub>ca</sub>：目标序列c位点出现a氨基酸的伪计数频率
+
+<p align="center"><img src=./picture/conservative_exist-tools-SIFT-5.png width=600 /></p>
+
+由伪计数得到的 B<sub>c</sub> 和 f<sub>ca</sub> 是怎么确定的？
+
+> 对于氨基酸组成多样的位点，SIFT倾向于使用更大的伪计数，因为越多样则被漏掉的同源序列可能就越多
+
+得到的PSSM的形式：
+
+<p align="center"><img src=./picture/conservative_exist-tools-SIFT-6.png width=600 /></p>
+
+<a name="polyphen2"><h3>3.2 Polyphen2 [<sup>目录</sup>](#content)</h3></a>
+
+PolyPhen同时结合序列和结果上的信息，主要的假设就是说有一些氨基酸的改变可能会影响蛋白的折叠，影响蛋白的的相互作用区间，影响它的稳定性 ，而蛋白结构如果有改变，那蛋白的功能就更可能会发生改变，所以它整合了序列和三维结构的一些特征 
+
+<p align="center"><img src=./picture/conservative_exist-tools-polyphen2-1.jpeg width=600 /></p>
+
+> **第一步** 跟SIFT相似，先做一个多序列比对，即把同源蛋白，功能一样的蛋白做一个多序列比对
+> 
+> **第二步** 然后找到这个蛋白的三维结构，或者这个三维结构没有，但是有一个和你这个蛋白序列比较相类似的另外一个蛋白结构有，那你可以做一个同源建模，来预测它的三维结构
+> 
+> **第三步** 有了这个结构呢，PolyPhen就开始来算，你的这个看到的变异位点，它在结构上有什么特征，比如它是不是位于一个二硫键，因为二硫键对结构带来比较大的影响，它是不是处于一个位点呢，是不是处于一个重要的活性位点呢，它是不是出于跨膜区呢，跨膜区的变异经常会对结构和功能造成比较大的影响，它是不是出于信号肽的区域呢等等，这都是它评估的一些特征。
+> 
+> **第四步** 它也评估这个位点所在的二级结构是是什么？它是在蛋白的表面。还是在蛋白的内部，它有没有影响到它能形成的氢键的数目的改变等等。最后它做判断就是用一个所谓的rule-based，基于经验的 它的好处是在有三维结构的时候，还是比较好的，但是，没有三维结构，那它方法就用不了，也只能用在这个序列的信息，并且它的这些规则是完全基于经验的，那你的经验是对还是不对呢？
+
+在2010年，他们课题组又开发了PolyPhen2这个版本：
+
+> - 增加了更多用来做预测的特征；
+> 
+> - 改成了用机器学习的一个方法，就是一个叫Naive Bayes的一种极其学习方法，这个算法的评估比原来基于经验的方法准确度是有很高的提高。
+
+注意：针对不同的疾病类型，Polyphen2提供了不同的预测策略：
+
+- **HVAR**：should be used for diagnostics of Mendelian diseases, which requires distinguishing mutations with drastic effects from all the remaining human variation, including abundant mildly deleterious alleles.The authors recommend calling "probably damaging" if the score is between 0.909 and 1, and "possibly damaging" if the score is between 0.447 and 0.908, and "benign" is the score is between 0 and 0.446.
+- **HDIV**： be used when evaluating rare alleles at loci potentially involved in complex phenotypes, dense mapping of regions identified by genome-wide association studies, and analysis of natural selection from sequence data. The authors recommend calling "probably damaging" if the score is between 0.957 and 1, and "possibly damaging" if the score is between 0.453 and 0.956, and "benign" is the score is between 0 and 0.452.
+
+一般突变看HVAR
+
+<a name="cadd"><h3>3.3 CADD [<sup>目录</sup>](#content)</h3></a>
+
+CADD —— Combined Annotation Dependent Depletion
+
+这个工具出行的历史任务是，在此之前，大多数SNV有害性或可容忍性 （deleteriousness）的评估都是基于单个因素，而CADD对多种特征都进行了整合
+
+> While many variant annotation and scoring tools are around, most annotations tend to exploit a single information type (e.g. conservation) and/or are restricted in scope (e.g. to missense changes). Thus, a broadly applicable metric that objectively weights and integrates diverse information is needed. Combined Annotation Dependent Depletion (CADD) is a framework that integrates multiple annotations into one metric by contrasting variants that survived natural selection with simulated mutations.
+
+CADD独创了一种打分算法，来衡量变异位点的有害程度。对于一组变异位点，CADD 结合等位基因的**多态性**，变异的**致病性**等多个因素，构建了一套模型，对每个变异位点进行评估，并给出一个具体的得分，简称`C-Scores`。 统计模型直接给出的打分叫做`RawScore`, 这个值越高，代表该变异位点是一个有害突变的概率越高。
+
+对于不同组的变异位点，比如对于1000G和ESP两批变异位点而言，由于各因素的差异，其模型是不同的，`RawScore`在不同模型间是无法直接比较的。所以提出了`scaled C-scores`的概念。对`RawScores`进行从大到小排序，采用`-10*log10(rank/total)`的公式计算出`scaled C-scores`。由于这个公式和`phread`的定义方式类似，所以`scaled C-scores`也叫做`PHREAD`。
+
+在分析潜在的致病变异位点时，通常会对PHREAD进行过滤。官方推荐阈值为10,15,20都可以，但是更加推荐结合C-Scores和其他实验证据来对变异位点的致病性进行评估，而不是单纯的进行一个数值过滤。
+
+<a name="dann"><h3>3.4 DANN [<sup>目录</sup>](#content)</h3></a>
+
+DANN利用神经网络算法评估变异位点的有害程度
+
+DANN软件可以看作是CADD的改进版本，改进了预测的算法，效果比CADD有所提高。
+
+CADD软件的核心是**支持向量机SVM算法**，这个算法在机器学习领域是一个常用的算法之一，对于具有线性关系的特征具有具有较好的性能，但是对于非线性关系的特征，其性能就相对差点。DANN采用了**神经网络算法**，更容易捕获非线性关系的特征，所以效果上比CADD要好一点。
+
+<p align="center"><img src=./picture/conservative_exist-tools-DANN-AUC.jpg width=800 /></p>
+
+<p align="center">Bioinformatics. 2015 Mar 1; 31(5): 761–763.</p>
+
+可以看到，两幅图中，DANN的AUC都比SVM的要大，说明DANN相比CADD确实是性能更好。
+
+<a name="metasvm"><h3>3.5 MetaSVM [<sup>目录</sup>](#content)</h3></a>
+
+分为三步：
+
+> (1) perform imputation for whole-exome variants and fill out missing scores for SIFT, PolyPhen, MutationAssessor and so on.
+> 
+> (2) Normalize all scores to 0-1 range 
+> 
+> (3) use a radial SVM model to train prediction model using all available scores and some population genetics parameters, and then apply the model on whole-exome variants. 
+
+简单来说，就是结合SIFT, PolyPhen 和 MutationAssessor 的预测分值，训练SVM模型来预测
+
+<a name="dbnsfp"<h3>3.5 dbNSFP数据库：整合多种nsSNP预测工具的结果 [<sup>目录</sup>](#content)</h3></a>
+
+网址：https://sites.google.com/site/jpopgen/dbNSFP
+
+整合了20种nsSNP的功能预测算法与6种保守性评估方法得到的分值
+
+> - 功能预测：
+> 
+> SIFT, Polyphen2-HDIV, Polyphen2-HVAR, LRT, MutationTaster2, MutationAssessor, FATHMM, MetaSVM, MetaLR, CADD, VEST3, PROVEAN, FATHMM-MKL coding, fitCons, DANN, GenoCanyon, Eigen coding, Eigen-PC, M-CAP, REVEL, MutPred
+> 
+> - 保守性评估：
+> 
+> PhyloP x 2, phastCons x 2, GERP++ and SiPhy
+
+|	Score (dbtype)	|	# variants in LJB23 build hg19	|	Categorical Prediction	|
+|:---|:---|:---|
+|	SIFT (sift)	|	77593284	|	D: Deleterious (sift<=0.05); T: tolerated (sift>0.05)	|
+|	PolyPhen 2 HDIV (pp2_hdiv)	|	72533732	|	D: Probably damaging (>=0.957), P: possibly damaging (0.453<=pp2_hdiv<=0.956); B: benign (pp2_hdiv<=0.452)	|
+|	PolyPhen 2 HVar (pp2_hvar)	|	72533732	|	D: Probably damaging (>=0.909), P: possibly damaging (0.447<=pp2_hdiv<=0.909); B: benign (pp2_hdiv<=0.446)	|
+|	LRT (lrt)	|	68069321	|	D: Deleterious; N: Neutral; U: Unknown	|
+|	MutationTaster (mt)	|	88473874	|	A" ("disease_causing_automatic"); "D" ("disease_causing"); "N" ("polymorphism"); "P" ("polymorphism_automatic"	|
+|	MutationAssessor (ma)	|	74631375	|	H: high; M: medium; L: low; N: neutral. H/M means functional and L/N means non-functional	|
+|	FATHMM (fathmm)	|	70274896	|	D: Deleterious; T: Tolerated	|
+|	MetaSVM (metasvm)	|	82098217	|	D: Deleterious; T: Tolerated	|
+|	MetaLR (metalr)	|	82098217	|	D: Deleterious; T: Tolerated	|
+|	GERP++ (gerp++)	|	89076718	|	higher scores are more deleterious	|
+|	PhyloP (phylop)	|	89553090	|	higher scores are more deleterious	|
+|	SiPhy (siphy)	|	88269630	|	higher scores are more deleterious	|
+
+dbNSFP的数据已经被整合进ANNOVAR中了，目前的最新版本为`dbnsfp33a`
+
+```
+# 注释数据下载
+$ annotate_variation.pl -downdb -webfrom annovar -buildver hg19 dbnsfp33a humandb/
+
+# 同时获得所有dnNSFP的注释
+$ table_annovar.pl ex1.avinput humandb/ -protocol dbnsfp33a -operation f -build hg19 -nastring .
+
+# 获得单一dnNSFP的注释，需要先从ANNOVAR的官方服务器上下载对应某个dnNSFP的注释的文件，以SIFT为例
+$ annotate_variation.pl -filter -dbtype ljb23_sift -buildver hg19 -out ex1 example/ex1.avinput humandb/
+```
+
+
 
 
 
@@ -333,3 +495,21 @@ SVM模型的训练使用了3种核函数：linear，radial 和 polynomial kernel
 参考资料：
 
 (1) Dong C, Wei P, Jian X, et al. Comparison and integration of deleteriousness prediction methods for nonsynonymous SNVs in whole exome sequencing studies. Hum Mol Genet. 2014;24(8):2125-37. 
+
+(2) Predicting the effects of coding non-synonymous variants on protein function using the SIFT algorithm, Nature Protocols 4, - 1073 - 1081 (2009)
+
+(3) Predicting Deleterious Amino Acid Substitutions, Genome Res. 2001 May; 11(5): 863.874.
+
+(4) [CADD官网](https://cadd.gs.washington.edu/)
+
+(5) [【简书】CADD数据库简介](https://www.jianshu.com/p/9b73eddd171f)
+
+(6) [【简书】DANN：利用神经网络算法评估变异位点的有害程度](https://www.jianshu.com/p/d6e6d52f1e3d)
+
+(7) Quang D, Chen Y, Xie X. DANN: a deep learning approach for annotating the pathogenicity of genetic variants. Bioinformatics. 2014;31(5):761-3. 
+
+(8) [dbNSFP 官网](https://sites.google.com/site/jpopgen/dbNSFP)
+
+(9) [ANNOVAR document](http://annovar.openbioinformatics.org/en/latest/)
+
+
