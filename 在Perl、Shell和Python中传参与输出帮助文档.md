@@ -379,16 +379,16 @@ annotate_command.add_argument('-i', '--vcffile', metavar='VCF_FILE', type=str, r
 
 // 5. 定义子命令query_variant
 query_variant_command = commands.add_parser('query-variant',
-											help='Query variant by variant identifier or by chromosome name and chromosomal position.',
-											description='Query variant by identifier chromosome name and chromosomal position.')
+					help='Query variant by variant identifier or by chromosome name and chromosomal position.',
+					description='Query variant by identifier chromosome name and chromosomal position.')
 query_variant_command.add_argument('-c', '--chromosome', metavar='name', type=str, dest='chromosome',help='Chromosome name.', default=None)
 query_variant_command.add_argument('-p', '--position', metavar='genome-position', type=int, dest='position',help='Genome position.', default=None)
 query_variant_command.add_argument('-l', '--positions', metavar='File-contain-a-list-of-genome-positions',
-									type=str, dest='positions',
-									help='Genome positions list in a file. One for each line. You can input single '
-										'position by -c and -p or using -l for multiple poisitions in a single file, '
-										'could be .gz file',
-									default=None)
+				type=str, dest='positions',
+				help='Genome positions list in a file. One for each line. You can input single '
+					'position by -c and -p or using -l for multiple poisitions in a single file, '
+					'could be .gz file',
+					default=None)
 ```
 
 输出的主命令的帮助文档如下：
