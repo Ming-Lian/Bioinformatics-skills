@@ -11,6 +11,7 @@
 	- [实现实例](#example-shell)
 - [Python](#python)
 	- [Python中的getopt传参](#getopt-in-python)
+	- [Python中的argparse传参](#argparse-in-python)
 	- [Python中输出帮助文档](#helpdoc-in-python)
 	- [实现实例](#example-python)
 
@@ -345,6 +346,71 @@ for opt,arg in opts:
 	.
 	.
 	.
+```
+
+<a name="argparse-in-python"><h3>Python中的argparse传参 [<sup>目录</sup>](#content)</h3></a>
+
+该示例例来自**黄树嘉**大佬的github项目 [cmdbtools](https://github.com/ShujiaHuang/cmdbtools/blob/master/cmdbtools/cmdbtools.py)
+
+```
+import argparse    //导入命令行解析的库文件
+
+// 为了别人执行代码的时候用--help看出来怎么使用这些代码
+argparser = argparse.ArgumentParser(description='Manage authentication for CMDB API and do querying from command line.') 
+// 添加子命令
+commands = argparser.add_subparsers(dest='command', title='Commands')
+
+// 分别定义各个子命令，并未各个子命令设置参数
+
+// 1. 定义子命令login
+login_command = commands.add_parser('login', help='Authorize access to CMDB API.')
+login_command.add_argument('-k', '--token', type=str, required=True, dest='token',help='CMDB API access key(Token).') // 给子命令添加'-k'参数
+
+// 2. 定义子命令logout
+logout_command = commands.add_parser('logout', help='Logout CMDB.')
+
+// 3. 定义子命令token
+token_command = commands.add_parser('print-access-token', help='Display access token for CMDB API.')
+
+// 4. 定义子命令annotate
+annotate_command = commands.add_parser('annotate', help='Annotate input VCF.',
+		description='Input VCF file. Multi-allelic variant records in input VCF must be split into multiple bi-allelic variant records.')
+annotate_command.add_argument('-i', '--vcffile', metavar='VCF_FILE', type=str, required=True, dest='in_vcffile',help='input VCF file.')
+
+// 5. 定义子命令query_variant
+query_variant_command = commands.add_parser('query-variant',
+											help='Query variant by variant identifier or by chromosome name and chromosomal position.',
+											description='Query variant by identifier chromosome name and chromosomal position.')
+query_variant_command.add_argument('-c', '--chromosome', metavar='name', type=str, dest='chromosome',help='Chromosome name.', default=None)
+query_variant_command.add_argument('-p', '--position', metavar='genome-position', type=int, dest='position',help='Genome position.', default=None)
+query_variant_command.add_argument('-l', '--positions', metavar='File-contain-a-list-of-genome-positions',
+									type=str, dest='positions',
+									help='Genome positions list in a file. One for each line. You can input single '
+										'position by -c and -p or using -l for multiple poisitions in a single file, '
+										'could be .gz file',
+									default=None)
+```
+
+输出的主命令的帮助文档如下：
+
+```
+$ cmdbtools --help
+usage: cmdbtools [-h]
+                {login,logout,print-access-token,annotate,query-variant} ...
+
+Manage authentication for CMDB API and do querying from command line.
+
+optional arguments:
+ -h, --help            show this help message and exit
+
+Commands:
+ {login,logout,print-access-token,annotate,query-variant}
+   login               Authorize access to CMDB API.
+   logout              Logout CMDB.
+   print-access-token  Display access token for CMDB API.
+   annotate            Annotate input VCF.
+   query-variant       Query variant by variant identifier or by chromosome
+                       name and chromosomal position.
 ```
 
 <a name="helpdoc-in-python"><h3>Python中输出帮助文档 [<sup>目录</sup>](#content)</h3></a>
