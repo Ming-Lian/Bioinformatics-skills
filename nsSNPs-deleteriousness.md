@@ -375,24 +375,64 @@ PolyPhen同时结合序列和结果上的信息，主要的假设就是说有一
 
 <p align="center"><img src=./picture/conservative_exist-tools-polyphen2-1.jpeg width=600 /></p>
 
-> **第一步** 跟SIFT相似，先做一个多序列比对，即把同源蛋白，功能一样的蛋白做一个多序列比对
-> 
-> **第二步** 然后找到这个蛋白的三维结构，或者这个三维结构没有，但是有一个和你这个蛋白序列比较相类似的另外一个蛋白结构有，那你可以做一个同源建模，来预测它的三维结构
-> 
-> **第三步** 有了这个结构呢，PolyPhen就开始来算，你的这个看到的变异位点，它在结构上有什么特征，比如它是不是位于一个二硫键，因为二硫键对结构带来比较大的影响，它是不是处于一个位点呢，是不是处于一个重要的活性位点呢，它是不是出于跨膜区呢，跨膜区的变异经常会对结构和功能造成比较大的影响，它是不是出于信号肽的区域呢等等，这都是它评估的一些特征。
-> 
-> **第四步** 它也评估这个位点所在的二级结构是是什么？它是在蛋白的表面。还是在蛋白的内部，它有没有影响到它能形成的氢键的数目的改变等等。最后它做判断就是用一个所谓的rule-based，基于经验的 它的好处是在有三维结构的时候，还是比较好的，但是，没有三维结构，那它方法就用不了，也只能用在这个序列的信息，并且它的这些规则是完全基于经验的，那你的经验是对还是不对呢？
+**Sequence-based features**
 
-在2010年，他们课题组又开发了PolyPhen2这个版本：
-
-> - 增加了更多用来做预测的特征；
+> （1）通过已有的蛋白质注释数据库（如UniProtKB/Swiss-Prot），鉴定某个替换 (substitution) 是否落在某个特殊的区域/位置
 > 
-> - 改成了用机器学习的一个方法，就是一个叫Naive Bayes的一种极其学习方法，这个算法的评估比原来基于经验的方法准确度是有很高的提高。
+> 特殊位点包括：
+> 
+> - DISULFID, CROSSLNK bond or
+> - BINDING, ACT_SITE, LIPID, METAL, SITE, MOD_RES, CARBOHYD, NON_STD site
+> 
+> 特殊区域包括：
+> 
+> TRANSMEM, INTRAMEM, COMPBIAS, REPEAT, COILED, SIGNAL, PROPEP 
+> 
+> （2）另外还会计算替换前后PSIC值的差值
+> 
+> PSIC值的计算方法类似于PSSM的计算方法，即在UniRef100数据库中利用BLAST搜索与qury序列高度同源的序列，然后将这些序列进行多序列比对，基于多序列比对结果得到profile matrix，其中行表示一个特定的氨基酸位点，列表示一种氨基酸，像这样：
+> 
+> <p align="center"><img src=./picture/conservative_exist-tools-SIFT-6.png width=600 /></p>
+> 
+> 这个矩阵的每个元素（profile score）的计算公式为：
+> 
+> <p align="center"><img src=./picture/nsSNPs-deleteriousness-tools-polyphen2-PSIC-1.png height=70 /></p>
+> 
+> 其中i表示矩阵的行号，j表示矩阵的列号，PSIC<sub>i,j</sub>表示矩阵第i行，第j列的PSIC值，P(aa=A<sub>j</sub>| posi=i) 表示在query序列第i个氨基酸位点出现A<sub>j</sub>氨基酸的概率，P(aa=A<sub>j</sub>) 表示任意位点出现A<sub>j</sub>氨基酸的概率
+> 
+> 若在qury序列第i个氨基酸位点，发生了A<sub>m</sub>到A<sub>n</sub>的非同义突变，则
+> 
+> <p align="center"><img src=./picture/nsSNPs-deleteriousness-tools-polyphen2-PSIC-2.png height=30 /></p>
+> 
+> 若ΔPSIC是一个比较大的正数，说明这种突变发生的概率很低，这种突变很可能是一个有害突变
 
-注意：针对不同的疾病类型，Polyphen2提供了不同的预测策略：
+**Structural features**
 
-- **HVAR**：should be used for diagnostics of Mendelian diseases, which requires distinguishing mutations with drastic effects from all the remaining human variation, including abundant mildly deleterious alleles.The authors recommend calling "probably damaging" if the score is between 0.909 and 1, and "possibly damaging" if the score is between 0.447 and 0.908, and "benign" is the score is between 0 and 0.446.
-- **HDIV**： be used when evaluating rare alleles at loci potentially involved in complex phenotypes, dense mapping of regions identified by genome-wide association studies, and analysis of natural selection from sequence data. The authors recommend calling "probably damaging" if the score is between 0.957 and 1, and "possibly damaging" if the score is between 0.453 and 0.956, and "benign" is the score is between 0 and 0.452.
+> 找到这个蛋白的三维结构，或者这个三维结构没有，但是有一个和你这个蛋白序列比较相类似的另外一个蛋白结构有，那你可以做一个同源建模，来预测它的三维结构
+> 
+> 然后基于这个三维结构计算该位点相关的结构参数 (structural parameters)，PolyPhen
+2利用DSSP数据库来获得下面的结构参数：
+>
+> - Secondary structure (according to the DSSP nomenclature)
+> - Solvent accessible surface area (absolute value in Å²)
+> - Phi-psi dihedral angles 
+
+使用的预测算法为Naive Bayes
+
+训练集有两种：
+
+> - **HumDiv**
+> 
+> compiled from all damaging alleles with known effects on the molecular function causing human Mendelian diseases, present in the UniProtKB database, together with differences between human proteins and their closely related mammalian homologs, assumed to be non-damaging
+> 
+> - **HumVar**
+> 
+> consisted of all human disease-causing mutations from UniProtKB, together with common human nsSNPs (MAF>1%) without annotated involvement in disease, which were treated as non-damaging. 
+
+基于两种不同类型的训练集训练得到两种不同的预测模型，适用于不同类型nsSNP的预测
+
+> - **HVAR**：should be used for diagnostics of Mendelian diseases, which requires distinguishing mutations with drastic effects from all the remaining human variation, including abundant mildly deleterious alleles.The authors recommend calling "probably damaging" if the score is between 0.909 and 1, and "possibly damaging" if the score is between 0.447 and 0.908, and "benign" is the score is between 0 and 0.446.
+> - **HDIV**： be used when evaluating rare alleles at loci potentially involved in complex phenotypes, dense mapping of regions identified by genome-wide association studies, and analysis of natural selection from sequence data. The authors recommend calling "probably damaging" if the score is between 0.957 and 1, and "possibly damaging" if the score is between 0.453 and 0.956, and "benign" is the score is between 0 and 0.452.
 
 一般突变看HVAR
 
@@ -500,16 +540,18 @@ $ annotate_variation.pl -filter -dbtype ljb23_sift -buildver hg19 -out ex1 examp
 
 (3) Predicting Deleterious Amino Acid Substitutions, Genome Res. 2001 May; 11(5): 863.874.
 
-(4) [CADD官网](https://cadd.gs.washington.edu/)
+(4) [PolyPhen-2官网](http://genetics.bwh.harvard.edu/pph2/dokuwiki/overview)
 
-(5) [【简书】CADD数据库简介](https://www.jianshu.com/p/9b73eddd171f)
+(5) [CADD官网](https://cadd.gs.washington.edu/)
 
-(6) [【简书】DANN：利用神经网络算法评估变异位点的有害程度](https://www.jianshu.com/p/d6e6d52f1e3d)
+(6) [【简书】CADD数据库简介](https://www.jianshu.com/p/9b73eddd171f)
 
-(7) Quang D, Chen Y, Xie X. DANN: a deep learning approach for annotating the pathogenicity of genetic variants. Bioinformatics. 2014;31(5):761-3. 
+(7) [【简书】DANN：利用神经网络算法评估变异位点的有害程度](https://www.jianshu.com/p/d6e6d52f1e3d)
 
-(8) [dbNSFP 官网](https://sites.google.com/site/jpopgen/dbNSFP)
+(8) Quang D, Chen Y, Xie X. DANN: a deep learning approach for annotating the pathogenicity of genetic variants. Bioinformatics. 2014;31(5):761-3. 
 
-(9) [ANNOVAR document](http://annovar.openbioinformatics.org/en/latest/)
+(9) [dbNSFP 官网](https://sites.google.com/site/jpopgen/dbNSFP)
+
+(10) [ANNOVAR document](http://annovar.openbioinformatics.org/en/latest/)
 
 
