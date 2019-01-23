@@ -476,7 +476,7 @@ CADD软件的核心是**支持向量机SVM算法**，这个算法在机器学习
 
 简单来说，就是结合SIFT, PolyPhen 和 MutationAssessor 的预测分值，训练SVM模型来预测
 
-<a name="dbnsfp"<h3>3.5 dbNSFP数据库：整合多种nsSNP预测工具的结果 [<sup>目录</sup>](#content)</h3></a>
+<a name="dbnsfp"><h3>3.5 dbNSFP数据库：整合多种nsSNP预测工具的结果 [<sup>目录</sup>](#content)</h3></a>
 
 网址：https://sites.google.com/site/jpopgen/dbNSFP
 
