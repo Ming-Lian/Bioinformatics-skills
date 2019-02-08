@@ -144,6 +144,12 @@ perl -MGetopt::Long -e 'print Getopt::Long->VERSION. "\n"'
 
 <a name="use-cpan-module"><h3>使用CPAN模块自动安装 [<sup>目录</sup>](#content)</h3></a>
 
+首先你得已经安装了CPAN，若没有执行以下命令：
+
+```
+# yum install perl-CPAN
+```
+
 安装前需要先联上网，**有无root权限均可**
 
 ```
