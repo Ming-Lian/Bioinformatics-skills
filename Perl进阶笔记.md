@@ -5,6 +5,7 @@
 - [Getopt::Long](#getopt-long)
 - [perl单行](#perl-command-one-line)
 - [使用Hash遇到的坑](#notice-when-using-hash)
+- [Hash中的排序操作](#sort-for-hash)
 - [安装Perl模块](#install-perl-module)
 	- [使用CPAN模块自动安装](#use-cpan-module)
 	- [手工安装](#install-manually)
@@ -105,6 +106,30 @@ while(<IN>){
 	$recorder[1] =~ s/(^\s+)|(\s+$)//g;	# 去除开头和末尾的空字符串
 	$hash{$recorder[0]} = $recorder[1];
 }
+```
+
+<a name="sort-for-hash"><h2>Hash中的排序操作 [<sup>目录</sup>](#content)</h2></a>
+
+对key进行排序
+
+其基本的语法结构为：
+
+```
+sort <排序规则> <排序对象>
+```
+
+若要对keys进行排序则排序对象就是keys，所以最后一项要写成`keys %hash`
+
+```
+# 按value排序
+## 对hash的keys按hash value排序（按ASCII码排序）
+sort { $hash{$a} cmp $hash{$b} } keys %hash
+## 对hash的keys按hash value排序（按数字大小排序）
+sort { $hash{$a} <=> $hash{$b} } keys %hash
+
+# 按key排序
+# 对hash的keys按hash key排序
+sort {$a<=>$b} keys %hash
 ```
 
 <a name="install-perl-module"><h2>安装Perl模块 [<sup>目录</sup>](#content)</h2></a>
