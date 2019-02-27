@@ -77,7 +77,7 @@ perl单行常用的场景为进行文本的逐行读取并操作，即隐式地�
 
 ```
 perl -ne
-	`BEGIN{}
+	'BEGIN{}
 	...
 	END{}'
 filename
