@@ -140,6 +140,14 @@ sort {$a<=>$b} keys %hash
 perl -e '{print "$_\n" foreach @INC}'
 ```
 
+若要临时添加perl模块的安装目录，则在perl脚本中shebang（`#!/usr/bin/perl`）后紧接着添加`push(@INC,"...");`命令，若是在perl单行中，则写成`BEGIN{push(@INC,"...");}`
+
+若是要永久添加perl模块的安装目录，则修改PERL5LIB环境变量即可：
+
+```
+export PERL5LIB=/PATH/TO/LIB
+```
+
 查看已安装的Perl模块：
 
 ```
@@ -147,14 +155,6 @@ perl -e '{print "$_\n" foreach @INC}'
 find  `perl -e 'print "@INC"'` -name '*.pm'
 # 查看当前环境下所有的模块（一般为用户自己安装的）
 instmodsh
-```
-
-若要临时添加perl模块的安装目录，则在perl脚本中shebang（`#!/usr/bin/perl`）后紧接着添加`push(@INC,"...");`命令，若是在perl单行中，则写成`BEGIN{push(@INC,"...");}`
-
-若是要永久添加perl模块的安装目录，则修改PERL5LIB环境变量即可：
-
-```
-export PERL5LIB=/PATH/TO/LIB
 ```
 
 查询单个perl模块的安装路径：
