@@ -149,6 +149,14 @@ find  `perl -e 'print "@INC"'` -name '*.pm'
 instmodsh
 ```
 
+若要临时添加perl模块的安装目录，则在perl脚本中shebang（`#!/usr/bin/perl`）后紧接着添加`push(@INC,"...");`命令，若是在perl单行中，则写成`BEGIN{push(@INC,"...");}`
+
+若是要永久添加perl模块的安装目录，则修改PERL5LIB环境变量即可：
+
+```
+export PERL5LIB=/PATH/TO/LIB
+```
+
 查询单个perl模块的安装路径：
 
 ```
