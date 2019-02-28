@@ -49,7 +49,7 @@ pheatmap(data,show_colnames=F,...）
 4、给列（一般一列可以看作是一个样本）添加分组信息，需要创建一个用于保存分组信息的数据框
 
 ```
-annotation_col<-data.frame(...)
+annotation_col<-data.frame(...) # 需要是factor类型
 rownames(annotation_col)<-colnames(data)	# 需要将数据框的行名设成输入数据的列名
 pheatmap(data,...,annotation_col=annotation_col)
 ```
