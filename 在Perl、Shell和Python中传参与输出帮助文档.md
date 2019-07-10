@@ -352,43 +352,44 @@ for opt,arg in opts:
 
 该示例例来自**黄树嘉**大佬的github项目 [cmdbtools](https://github.com/ShujiaHuang/cmdbtools/blob/master/cmdbtools/cmdbtools.py)
 
-```
-import argparse    //导入命令行解析的库文件
+```python
+import argparse    # 导入命令行解析的库文件
 
-// 为了别人执行代码的时候用--help看出来怎么使用这些代码
+# 为了别人执行代码的时候用--help看出来怎么使用这些代码
 argparser = argparse.ArgumentParser(description='Manage authentication for CMDB API and do querying from command line.') 
-// 添加子命令
+# 添加子命令
 commands = argparser.add_subparsers(dest='command', title='Commands')
 
-// 分别定义各个子命令，并未各个子命令设置参数
+# 分别定义各个子命令，并未各个子命令设置参数
 
-// 1. 定义子命令login
+# 1. 定义子命令login
 login_command = commands.add_parser('login', help='Authorize access to CMDB API.')
-login_command.add_argument('-k', '--token', type=str, required=True, dest='token',help='CMDB API access key(Token).') // 给子命令添加'-k'参数
+login_command.add_argument('-k', '--token', type=str, required=True, dest='token',help='CMDB API access key(Token).') # 给子命令添加'-k'参数
 
-// 2. 定义子命令logout
+# 2. 定义子命令logout
 logout_command = commands.add_parser('logout', help='Logout CMDB.')
 
-// 3. 定义子命令token
+# 3. 定义子命令token
 token_command = commands.add_parser('print-access-token', help='Display access token for CMDB API.')
 
-// 4. 定义子命令annotate
+# 4. 定义子命令annotate
 annotate_command = commands.add_parser('annotate', help='Annotate input VCF.',
 		description='Input VCF file. Multi-allelic variant records in input VCF must be split into multiple bi-allelic variant records.')
 annotate_command.add_argument('-i', '--vcffile', metavar='VCF_FILE', type=str, required=True, dest='in_vcffile',help='input VCF file.')
 
-// 5. 定义子命令query_variant
+# 5. 定义子命令query_variant
 query_variant_command = commands.add_parser('query-variant',
-					help='Query variant by variant identifier or by chromosome name and chromosomal position.',
-					description='Query variant by identifier chromosome name and chromosomal position.')
+											help='Query variant by variant identifier or by chromosome name and chromosomal position.',
+											description='Query variant by identifier chromosome name and chromosomal position.')
 query_variant_command.add_argument('-c', '--chromosome', metavar='name', type=str, dest='chromosome',help='Chromosome name.', default=None)
 query_variant_command.add_argument('-p', '--position', metavar='genome-position', type=int, dest='position',help='Genome position.', default=None)
 query_variant_command.add_argument('-l', '--positions', metavar='File-contain-a-list-of-genome-positions',
-				type=str, dest='positions',
-				help='Genome positions list in a file. One for each line. You can input single '
-					'position by -c and -p or using -l for multiple poisitions in a single file, '
-					'could be .gz file',
-					default=None)
+									type=str, dest='positions',
+									help='Genome positions list in a file. One for each line. You can input single '
+										'position by -c and -p or using -l for multiple poisitions in a single file, '
+										'could be .gz file',
+									default=None)
+argparser.parse_args()
 ```
 
 输出的主命令的帮助文档如下：
@@ -411,6 +412,74 @@ Commands:
    annotate            Annotate input VCF.
    query-variant       Query variant by variant identifier or by chromosome
                        name and chromosomal position.
+```
+
+下面换一种思路来学习`argparse`：给出要实现的帮助文档，如何通过编写代码实现
+
+帮助文档以上面的为例：
+
+<p align="center"><img src=./picture/Helpdoc-in-Perl-Shell-and-Python.png /></p>
+
+上面用红色框将帮助文档的内容分成了三个在实现过程中相对独立的部分
+
+（1）脚本基本语法和描述信息
+
+在创建好`argparse`对象之后，就设定好了这一部分的信息
+
+```
+argparser = argparse.AugumentParser(description='Manage authentication for CMDB API and do querying from command line.')
+.
+.
+.
+argparser.parse_args()
+```
+
+描述信息在`description`参数中添加
+
+从脚本基本语法可以看出：
+
+```
+usage: cmdbtools [-h]
+                {login,logout,print-access-token,annotate,query-variant} ...
+```
+
+在主程序的parser下方还创建了附属的子parser，可以通过`argparser.add_subparsers`创建附属的子parsers对象（例子中将子parsers对象命名为commands）：
+
+```
+commands = argparser.add_subparsers(dest='command', title='Commands')
+```
+
+创建好子parsers对象之后，还需要创建其下所附属的具体的每一个子parser，使用`command.add_parser`：
+
+```python
+login_command = commands.add_parser('login', help='Authorize access to CMDB API.')
+
+logout_command = commands.add_parser('logout', help='Logout CMDB.')
+
+...
+```
+
+（2）默认的可选参数`-h/--help`
+
+这个默认的可选参数不需要单独创建，在创建`argparse`对象后就会默认内置了
+
+（3）添加具体的参数
+
+例如，子parser `login`下的帮助文档：
+
+```
+usage: cmdbtools login [-h] -k TOKEN
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -k TOKEN, --token TOKEN
+                        CMDB API access key(Token).
+```
+
+则可以通过下面的代码添加对应的参数解析：
+
+```python
+login_command.add_argument('-k', '--token', type=str, required=true, dest='token', help='CMDB API access key(Token).')
 ```
 
 <a name="helpdoc-in-python"><h3>Python中输出帮助文档 [<sup>目录</sup>](#content)</h3></a>
