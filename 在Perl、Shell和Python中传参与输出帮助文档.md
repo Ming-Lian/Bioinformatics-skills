@@ -48,13 +48,13 @@ getopt方法的优点是，传参方式灵活，而且采用这种传参方式�
 
 Perl中的这个功能需要通过调用`Getopt::Long`模块实现
 
-```
+```perl
 use Getopt::Long;
 ```
 
 然后使用GetOptions函数承接传递的参数：
 
-```
+```perl
 my ($var1,$var2,$var3,$var4); # 若使用"use strict"模式，则需要提前定义变量
 GetOptions(
 	"i:s"=>\$var1,
@@ -100,7 +100,7 @@ die `pod2doc $0` if (...);
 
 <a name="example-perl"><h3>实现实例 [<sup>目录</sup>](#content)</h3></a>
 
-```
+```perl
 #!/usr/bin/perl
 use strict;
 use warnings;
@@ -155,7 +155,7 @@ getopts [option[:]] [DESCPRITION] VARIABLE
 > 
 > `VARIABLE`：表示将某个选项保存在变量VARIABLE中
 
-```
+```bash
 while getopts ":a:b:c:" opt
 do
     case $opt in
@@ -179,7 +179,7 @@ done
 
 在Shell中编辑一个`helpdoc( )`的函数即可实现输出帮助文档
 
-```
+```bash
 helpdoc(){
     cat <<EOF
 Description:
@@ -207,7 +207,7 @@ EOF
 
 当你要打印帮助文档时，直接调用执行`helpdoc( )`函数即可
 
-```
+```bash
 # 当没有指定参数时，即参数个数为0时，输出帮助文档并退出程序执行
 if [ $# = 0 ]
 then
@@ -218,7 +218,7 @@ fi
 
 <a name="example-shell"><h3>实现实例 [<sup>目录</sup>](#content)</h3></a>
 
-```
+```bash
 helpdoc(){
     cat <<EOF
 Description:
@@ -314,13 +314,13 @@ done
 
 Python中的这种功能需要通过`getopt`模块实现
 
-```
+```python
 import getopt
 ```
 
 Python脚本获得成对的参数名和参数值后，会分别把它们保存在一个字典变量中，参数名为key，参数值为value
 
-```
+```python
 opts,args = getopt.getopt(argv,"hi:o:t:n:",["ifile=","ofile=","time="])
 ```
 
@@ -334,7 +334,7 @@ getopt函数的使用说明：
 
 然后通过条件判断的方法对参数进行解析：
 
-```
+```python
 for opt,arg in opts:
 	if opt in ("-h","--help"):
 		print(helpdoc)
@@ -482,11 +482,12 @@ optional arguments:
 login_command.add_argument('-k', '--token', type=str, required=true, dest='token', help='CMDB API access key(Token).')
 ```
 
+
 <a name="helpdoc-in-python"><h3>Python中输出帮助文档 [<sup>目录</sup>](#content)</h3></a>
 
 在Python中创建一个字符串变量`helpdoc`即可实现输出帮助文档
 
-```
+```python
 helpdoc = '''
 Description
 
@@ -512,7 +513,7 @@ Parameters
 
 在需要时将这个变量打印出来即可：
 
-```
+```python
 try:
 	opts,args = getopt.getopt(argv,"hi:o:t:n:",["ifile=","ofile=","time="])
 	if len(opts) == 0:
@@ -525,7 +526,7 @@ except getopt.GetoptError:
 
 <a name="example-python"><h3>实现实例 [<sup>目录</sup>](#content)</h3></a>
 
-```
+```python
 import getopt
 
 .
@@ -591,7 +592,10 @@ Parameters
             sleep_time = int(arg)
         elif opt in ("-n","--requests-number"):
             requestNum = int(arg)
-
+	
+	.
+	.
+	.
 ```
 
 
