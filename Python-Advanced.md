@@ -192,7 +192,7 @@ Popen的方法：
 >
 >   与子进程进行交互，向stdin发送数据，或从stdout和stderr中读取数据
 >
->   可选参数input指定发送到子进程的参数。`Communicate()`返回一个元组：`(stdoutdata, stderrdata)`
+>   可选参数input指定发送到子进程的参数。`Communicate()`返回一个元组：`(stdoutdata, stderrdata)`，在python3中结果为byte类型（在字符串的引号外有一个字母'b'的标志），要得到str类型需要decode转换一下：`stdoutdata.decode('utf-8')`。若标准输出与标准错误中的某一项没有，则对应的那一项的值为`None`
 >
 >   注意：如果希望通过进程的 stdin 向其发送数据，在创建Popen对象的时候，参数 stdin 必须被设置为 PIPE。同样，如果希望从 stdout 和 stderr 获取数据，必须将 stdout 和 stderr 设置为PIPE
 >
@@ -220,24 +220,42 @@ p.wait() # 得到命令的返回值，0表示执行成功
 
 （2）进程通讯
 
-如果想得到进程的输出，管道是个很方便的方法，这样：
+- 单向通信
 
-```python
-p = subprocess.Popen("dir", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  如果想得到进程的输出，管道是个很方便的方法，这样：
 
-(stdoutput,erroutput) = p.communicate()
-```
+  ```python
+  p = subprocess.Popen("dir", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-`p.communicate`会一直等到进程退出，并将标准输出和标准错误输出返回，这样就可以得到子进程的输出了
+  (stdoutput,erroutput) = p.communicate()
+  ```
 
-上面，标准输出和标准错误输出是分开的，也可以合并起来，只需要将stderr参数设置为`subprocess.STDOUT`就可以了
+  `p.communicate`会一直等到进程退出，并将标准输出和标准错误输出返回，这样就可以得到子进程的输出了
 
-```python
-p=subprocess.Popen("dir", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  上面，标准输出和标准错误输出是分开的，也可以合并起来，只需要将stderr参数设置为`subprocess.STDOUT`就可以了
 
-(stdoutput, erroutput) = p.communicate()
-```
+  ```python
+  p=subprocess.Popen("dir", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
+  (stdoutput, erroutput) = p.communicate()
+  ```
+
+- 双向通信
+
+  除了可以单向通信获得进程的输出之外，也可以给进程提供输入，将进程的`stdin`设为`subprocess.PIPE`，即让进程通过管道获取输入
+
+  ```python
+  proc = subprocess.Popen(['python3'],stdin=subprocess.PIPE,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+  proc.stdin.write('print("helloworld")'.encode('utf-8'))
+
+  out, err = proc.communicate()
+
+  print(out)
+  >>>
+  b'helloworld\n'
+  ```
+  
 （3）类似shell管道的方式连接起上下游多个命令
 
 ```python
