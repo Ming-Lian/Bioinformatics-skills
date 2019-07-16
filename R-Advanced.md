@@ -327,7 +327,7 @@ library（optparse)
 option_list <- list(
 	make_option(c("-v", "--verbose"), action="store_true", default=TRUE, help="Print extra output [default]"),
 	make_option(c("-q", "--quietly"), action="store_false", dest="verbose", help="Print little output"),
-	make_option(c("-c", "--count"), type="integer", default=5, help="Number of random normals to generate [default %default]",        metavar="number"),
+	make_option(c("-c", "--count"), type="integer", default=5, help="Number of random normals to generate [default %default]", metavar="number"),
 	make_option("--generator", default="rnorm", help = "Function to generate random deviates [default \"%default\"]"),
 	make_option("--mean", default=0, help="Mean if generator == \"rnorm\" [default %default]"),
 	make_option("--sd", default=1, metavar="standard deviation", help="Standard deviation if generator == \"rnorm\" [default %default]")
@@ -356,4 +356,4 @@ cat("\n")
 
 (1) [在R中如何逐行读取CSV文件并将内容识别为正确的数据类型？](https://oomake.com/question/1544925)
 
-(2) [CSDN·卡西莫多的礼物《》](https://blog.csdn.net/qq_35696312/article/details/88188379)
+(2) [CSDN·卡西莫多的礼物《R语言 optparse的使用》](https://blog.csdn.net/qq_35696312/article/details/88188379)
