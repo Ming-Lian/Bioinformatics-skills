@@ -322,7 +322,7 @@ Row_current <- strsplit(row_current, '\t')
 `optparse`可以用来实现类似在Python中的`argparse`一样的作用，使得我们写的R脚本可以在命令行中通过添加参数的方式来运行，同时有帮助文档可以来帮助使用者快速上手
 
 ```R
-library（optparse)
+library(optparse)
 
 option_list <- list(
 	make_option(c("-v", "--verbose"), action="store_true", default=TRUE, help="Print extra output [default]"),
