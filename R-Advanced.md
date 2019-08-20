@@ -3,6 +3,8 @@
 [R语言笔记](#title)
 - [1. 用pheatmap画热图](#use-pheatmap)
 - [2. R中的并行化方法](#r-parallel)
+    - [2.1. parallel包](#r-parallel-parallel-package)
+    - [2.2. foreach包](#r-parallel-foreach-package)
 - [3. R语言向量化技术](#r-vectorization-technology)
 - [4. 标量化和向量化的逻辑运算](#scalarization-and-vectorization-for-logic-operation)
 - [5. Divide-Conquer：矩阵的分块计算与子块计算结果合并](#divide-conquer-in-calc-large-matrix)
@@ -70,6 +72,40 @@ pheatmap(data,...,main="title")
 
 <a name="r-parallel"><h2>2. R中的并行化方法 [<sup>目录</sup>](#content)</h2></a>
 
+R并行计算的必要性：
+
+> R 的内存使用方式和计算模式限制了 R 处理大规模数据的能力
+>
+> R 采用的是内存计算模式（In-Memory），被处理的数据需要预取到主存（RAM）中，优点是计算效率高、速度快，但缺点是这样一来能处理的问题规模就非常有限（小于 RAM 的大小）
+>
+> 另一方面，R 的核心（R core）是一个单线程的程序
+
+现代的多核处理器上，R 无法有效地利用所有的计算内核
+
+并行计算技术正是为了在实际应用中解决单机内存容量和单核计算能力无法满足计算需求的问题而提出
+
+<p align="center"><img src=./picture/Advanced-R-programing-r-parallel-1.png width=600 /></p>
+
+R 中的并行计算模式大致可以分为隐式和显示两种
+
+- 隐式并行计算
+
+    隐式计算对用户隐藏了大部分细节，用户不需要知道具体数据分配方式 ，算法的实现或者底层的硬件资源分配。系统会根据当前的硬件资源来自动启动计算核心
+
+    这种模式对于大多数用户来说是最喜闻乐见的。我们可以在完全不改变原有计算模式以及代码的情况下获得更高的性能
+
+- 显示并行计算
+
+    显式计算则要求用户能够自己处理算例中数据划分，任务分配，计算以及最后的结果收集，因此，显式计算模式对用户的要求更高，用户不仅需要理解自己的算法，还需要对并行计算和硬件有一定的理解
+
+    值得庆幸的是，现有 R 中的并行计算框架，如 parallel (snow,multicores)，Rmpi 和 foreach 等采用的是映射式并行模型（Mapping），使用方法简单清晰，极大地简化了编程复杂度
+
+    <p align="center"><img src=./picture/Advanced-R-programing-r-parallel-2.png width=600 /></p>
+
+
+
+<a name="r-parallel-parallel-package"><h3>2.1. parallel包 [<sup>目录</sup>](#content)</h3></a>
+
 R的并行化是在 `*apply` 系列函数的基础上产生的，所以在介绍R的并行化之前，有必要对 `*apply` 系列函数作一个简单的说明，下面只对`apply( )`进行说明
 
 > 函数语法格式：`apply(x, margin, fun, ...)`
@@ -107,6 +143,75 @@ out <- parApply(cl,data,1,fun)
 # 任务结束后，关闭集群对象
 stopCluster(cl)
 ```
+
+注意：
+
+> 如果有环境里面的外置变量（自己定义）那么需要额外插入，复制到不同核上面，而且如果有不同包里面的函数，都要额外加载、复制多份给不同的电脑核心
+
+```R
+xx <- 1
+
+clusterExport(cl, "xx")
+```
+
+<a name="r-parallel-foreach-package"><h3>2.2. foreach包 [<sup>目录</sup>](#content)</h3></a>
+
+初始化的过程有些不同，你需要register注册集群：
+
+```R
+library(foreach)
+library(doParallel)
+
+cl<-makeCluster(no_cores)
+registerDoParallel(cl)
+```
+
+记得最后要结束集群：
+
+```R
+stopImplicitCluster()
+```
+
+oreach函数可以使用参数.combine控制你汇总结果的方法：
+
+```R
+> foreach(exponent = 2:4, .combine = c)  %dopar%  base^exponent
+[1]  4  8 16
+
+> foreach(exponent = 2:4, .combine = rbind)  %dopar%   base^exponent
+         [,1]
+result.1    4
+result.2    8
+result.3   16
+
+> foreach(exponent = 2:4, .combine = list, .multicombine = TRUE)  %dopar%   base^exponent
+[[1]]
+[1] 4
+
+[[2]]
+[1] 8
+
+[[3]]
+[1] 16
+```
+
+注意到最后list的`combine`方法是默认的。在这个例子中用到一个`.multicombine`参数，他可以帮助你避免嵌套列表。比如说`list(list(result.1, result.2), result.3)`：
+
+```R
+> foreach(exponent = 2:4, .combine = list)  %dopar%   base^exponent
+[[1]]
+[[1]][[1]]
+[1] 4
+
+[[1]][[2]]
+[1] 8
+
+
+[[2]]
+[1] 16
+```
+
+注：
 
 <a name="r-vectorization-technology"><h2>3. R语言向量化技术 [<sup>目录</sup>](#content)</h2></a>
 
