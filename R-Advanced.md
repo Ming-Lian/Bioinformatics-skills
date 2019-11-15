@@ -12,6 +12,8 @@
 - [7. 逐行读入文件](#read-one-line-each-time)
 - [8. 关于超大矩阵运算的思考](#think-of-vast-matrix)
 - [9. optparse的使用](#usage-of-optparse)
+- [10. 数字以科学计数法输出](#output-number-in-scientific-method)
+- [11. reshape2::melt的使用](#usage-of-reshape2-melt)
 
 
 
@@ -454,6 +456,43 @@ else {
 cat("\n")
 ```
 
+<a name="output-number-in-scientific-method"><h2>10. 数字以科学计数法输出 [<sup>目录</sup>](#content)</h2></a>
+
+```R
+format(0.00001, scientific=TRUE, digit=2)
+```
+
+<a name="usage-of-reshape2-melt"><h2>11. reshape2::melt的使用 [<sup>目录</sup>](#content)</h2></a>
+
+reshape2::melt常用于将短表格转换成长表格，以用于ggplot绘图
+
+段表格示例：
+
+| Id | Var1 | Var2 | Var3 |
+|:---:|:---:|:---:|:---:|
+| Id1 | a1 | b1 | c1 |
+| Id2 | a2 | b2 | c2 |
+| Id3 | a3 | b3 | c3 |
+
+其对应的长表格为：
+
+| Id | VAR | VALUE |
+|:---:|:---:|:---:|
+| Id1 | Var1 | a1 |
+| Id1 | Var2 | b1 |
+| Id1 | Var3 | c1 |
+| Id2 | Var1 | a2 |
+| Id2 | Var2 | b2 |
+| Id2 | Var3 | c2 |
+| Id3 | Var1 | a3 |
+| Id3 | Var2 | b3 |
+| Id3 | Var3 | c3 |
+
+假设原始的短表格保存在数据框变量X中，现要将其转换成以Id列为唯一记录识别项，其他项作为测量项的长表格Y，则可以通过下面的命令实现：
+
+```
+Y <- melt(X, id.vars=1)
+```
 
 ---
 
