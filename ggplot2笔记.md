@@ -4,13 +4,16 @@
 - [直方图：geom_histogram](#histogram)
 - [柱状图：geom_bar](#bar)
 - [控制整体图形属性](#whole-plot-style)
-	- [标尺（Scale）](#scale)
+	- [标尺（Scale）]($scale)
 	- [标题](#plot-title)
 	- [图例](#legend)
 - [统计变换（Statistics）](#statistics)
 - [坐标系统（Coordinante）](#coordinante)
 - [分面（Facet）](#facet)
 - [作分组箱线图并添加均值点连线及显著性程度标注](#boxplot-plus-siginfo)
+    - [从头实现（不推荐）](#boxplot-plus-siginfo-mannual)
+    - [使用ggsiginf包](#boxplot-plus-siginfo-use-ggsiginf)
+- [使用 RColorBrewer 扩展调色板](#use-RColorBrewer)
 
 
 
@@ -80,6 +83,21 @@ labs(x="Cut",y="Price",title="Price vs Cut")
 
 隐藏图例：`theme(legend.position="none")`
 
+图例的安放:用 `theme` 和 `guides` 来调整legend的位置和布局：
+
+原图
+
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-4.png width=700 /></p>
+
+将图例放在图下方，且为了防止它按照默认的组织方式——按两列展开，这样会影响整体布局的美观，可以按照指定行数去展开：
+
+```
+... + theme(legend.position="bottom") +
+  guides(fill=guide_legend(nrow=2))
+```
+
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-5.png width=700 /></p>
+
 <a name="statistics"><h2>统计变换（Statistics） [<sup>目录</sup>](#content)</h2></a>
 
 统计变换对原始数据进行某种计算，然后在图上表示出来
@@ -127,6 +145,8 @@ ggplot(small, aes(x=carat, y=price))+geom_point(aes(colour=cut))+scale_y_log10()
 <p align="center"><img src=./picture/ggplot2-facet.png width=600 /></p>
 
 <a name="boxplot-plus-siginfo"><h2>作分组箱线图并添加均值点连线及显著性程度标注 [<sup>目录</sup>](#content)</h2></a>
+
+<a name="boxplot-plus-siginfo-mannual"><h3>从头实现（不推荐） [<sup>目录</sup>](#content)</h3></a>
 
 <p align="center"><img src=./picture/ggplot2-boxplot-plus-siginfo-1.png width=600 /></p>
 
@@ -334,6 +354,100 @@ grid.arrange(p1, p2, nrow=1, ncol=2,widths=c(3.5,1),heights=c(4))
 
 <p align="center"><img src=./picture/ggplot2-boxplot-plus-siginfo-4.png width=600 /></p>
 
+<a name="boxplot-plus-siginfo-use-ggsiginf"><h3>使用ggsiginf包 [<sup>目录</sup>](#content)</h3></a>
+
+官方文档：https://cran.r-project.org/web/packages/ggsignif/vignettes/intro.html
+
+简单使用——就两步：
+
+> (1) 导入需要的包
+>
+> ```R
+> library(ggplot2)
+> library(ggsignif)
+> ```
+>
+> (2) 画图
+>
+> ```R
+> ggplot(iris, aes(x=Species, y=Sepal.Length)) + 
+>  geom_boxplot() +
+>  geom_signif(comparisons = list(c("versicolor", "virginica")), map_signif_level=TRUE)
+> ```
+>
+> <p align="center"><img src=./picture/ggplot2-boxplot-plus-siginfo-5.png width=400 /></p>
+
+高级用法：
+
+> - （对连个比较对象）全部自行设置显著性标注
+>
+>   ```R
+>   geom_signif(y_position=c(5.3, 8.3), xmin=c(0.8, 1.8), xmax=c(1.2, 2.2), annotation=c("**", "NS"), tip_length=0)
+>   ```
+>
+> - 设定多个两两比较
+>
+>   ```R
+>   comparisons=lists(c('c1', 'c2'), c('c1', 'c3'), ...)
+>   ```
+
+<a name="use-RColorBrewer"><h2>使用 RColorBrewer 扩展调色板 [<sup>目录</sup>](#content)</h2></a>
+
+通过运行 `display.brewer.all()` ，可以查看RColorBrewer中提供的标准配色方案：
+
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-1.png width=700 /></p>
+
+则在用ggplot2绘图时只需要在其中加上这样一句：
+
+```R
+... + scale_fill_brewer(palette="Set1") + ...
+```
+
+通过设置`palette`参数来选择合适的配色方案
+
+有时会遇到这样的情况：需要的颜色种类和提供的配色方案中所具有的颜色种类不匹配，一般是需要的颜色种类对于所能提供的，此时就可能报错：
+
+```R
+ggplot(mtcars) + 
+  geom_bar(aes(factor(hp), fill=factor(hp))) +
+  scale_fill_brewer(palette="Set2")
+
+Warning message:
+In RColorBrewer::brewer.pal(n, pal) : n too large, allowed maximum for palette Set2 is 8
+Returning the palette you asked for with that many colors
+```
+
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-2.png width=700 /></p>
+
+此时，RColorBrewer为我们提供了一种通过使用构造函数`colorRampPalette`插入现有调色板来生成更大调色板的方法
+
+```R
+colourCount = length(unique(mtcars$hp))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+ 
+ggplot(mtcars) + 
+  geom_bar(aes(factor(hp)), fill=getPalette(colourCount)) + 
+  theme(legend.position="right")
+```
+
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-3.png width=700 /></p>
+
+虽然我们解决了颜色不足的问题，但其他有趣的事情发生了：虽然所有的柱子都回来了并且涂上了不同颜色，但是我们也失去了颜色图例。我故意添加主题（`legend.position = ...`）来展示这个事实：尽管有明确的位置请求，但图例不再是图形的一部分
+
+原因在于：fill参数移动到柱状图aes函数之外 - 这有效地从ggplot的美学数据集中删除了fill信息。因此，legend没有应用到任何东西上
+
+要修复它，请将`fill`放回到`aes`中并使用`scale_fill_manual()`定义自定义调色板：
+
+```R
+ggplot(mtcars) + 
+  geom_bar(aes(factor(hp), fill=factor(hp))) + 
+  scale_fill_manual(values = getPalette(colourCount))
+```
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-4.png width=700 /></p>
+
+
+
+
 ---
 
 参考资料：
@@ -341,3 +455,5 @@ grid.arrange(p1, p2, nrow=1, ncol=2,widths=c(3.5,1),heights=c(4))
 (1) [Y叔博客：Use ggplot2](https://guangchuangyu.github.io/cn/2014/05/use-ggplot2/)
 
 (2) [生信杂谈：ggplot2作分组箱线图并添加均值点连线及显著性程度标注](https://mp.weixin.qq.com/s/inzA7B3vfVSMm66gQi7RTA)
+
+(3) [使用 ggplot2 和 RColorBrewer 扩展调色板](https://www.cnblogs.com/shaocf/p/9600340.html)
