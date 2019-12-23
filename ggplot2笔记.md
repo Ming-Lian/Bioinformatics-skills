@@ -14,6 +14,7 @@
     - [从头实现（不推荐）](#boxplot-plus-siginfo-mannual)
     - [使用ggsiginf包](#boxplot-plus-siginfo-use-ggsiginf)
 - [使用 RColorBrewer 扩展调色板](#use-RColorBrewer)
+- [使用ggbiplot画PCA图](#use-ggbiplot-plot-PCA)
 
 
 
@@ -445,6 +446,28 @@ ggplot(mtcars) +
 ```
 <p align="center"><img src=./picture/ggplot2-use-RColorBrewer-4.png width=700 /></p>
 
+<a name="use-ggbiplot-plot-PCA"><h2>使用ggbiplot画PCA图 [<sup>目录</sup>](#content)</h2></a>
+
+安装
+
+```R
+library(devtools)
+install_github("vqv/ggbiplot")
+```
+
+基本使用：
+
+```R
+library(ggbiplot)
+data(wine)
+wine.pca <- prcomp(wine, scale. = TRUE)
+ggbiplot(wine.pca, obs.scale = 1, var.scale = 1,
+  groups = wine.class, ellipse = TRUE, circle = TRUE) +
+  scale_color_discrete(name = '') +
+  theme(legend.direction = 'horizontal', legend.position = 'top')
+```
+
+<p align="center"><img src=./picture/ggplot2-use-ggbiplot-plot-PCA.png width=700 /></p>
 
 
 
@@ -457,3 +480,5 @@ ggplot(mtcars) +
 (2) [生信杂谈：ggplot2作分组箱线图并添加均值点连线及显著性程度标注](https://mp.weixin.qq.com/s/inzA7B3vfVSMm66gQi7RTA)
 
 (3) [使用 ggplot2 和 RColorBrewer 扩展调色板](https://www.cnblogs.com/shaocf/p/9600340.html)
+
+(4) [ggbiplot README](https://github.com/vqv/ggbiplot)
