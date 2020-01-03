@@ -14,7 +14,7 @@
 - [9. optparse的使用](#usage-of-optparse)
 - [10. 数字以科学计数法输出](#output-number-in-scientific-method)
 - [11. reshape2::melt的使用](#usage-of-reshape2-melt)
-
+- [12. 计算偏离系数](#calculate-Asymmetry-coefficient)
 
 
 
@@ -494,6 +494,23 @@ reshape2::melt常用于将短表格转换成长表格，以用于ggplot绘图
 Y <- melt(X, id.vars=1)
 ```
 
+<a name="calculate-Asymmetry-coefficient"><h2>12. 计算偏离系数 [<sup>目录</sup>](#content)</h2></a>
+
+$$\gamma_1=\frac{\mu_3}{\mu_2^{3 \over 2}}$$
+
+其中$\mu_2$和$\mu_3$分别表示第二、三中心元素，其计算方法为：
+
+$$\mu_k=\frac{1}{N}\sum_{i=1}^{N}(x_i-\overline{x})^k$$
+
+当分布完全对称时，$\gamma_1=0$，当$\gamma_1<0$或者$\gamma_1>0$则分别表示左偏和右偏
+
+```R
+> library(e1071)                    # load e1071 
+> duration = faithful$eruptions     # eruption durations 
+> moment(duration, order=3, center=TRUE) 
+[1] -0.6149 
+```
+
 ---
 
 参考资料：
@@ -501,3 +518,9 @@ Y <- melt(X, id.vars=1)
 (1) [在R中如何逐行读取CSV文件并将内容识别为正确的数据类型？](https://oomake.com/question/1544925)
 
 (2) [CSDN·卡西莫多的礼物《R语言 optparse的使用》](https://blog.csdn.net/qq_35696312/article/details/88188379)
+
+(3) [R︱并行计算以及提高运算效率的方式(parallel包、clusterExport函数、SupR包简介)](https://blog.csdn.net/sinat_26917383/article/details/52719232)
+
+(4) [统计之都《R 与并行计算》](https://cosx.org/2016/09/r-and-parallel-computing)
+
+(5) [R Tutorial eBook: Skewness](http://www.r-tutor.com/elementary-statistics/numerical-measures/skewness)
