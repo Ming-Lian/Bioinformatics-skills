@@ -7,14 +7,17 @@
 	- [标尺（Scale）]($scale)
 	- [标题](#plot-title)
 	- [图例](#legend)
+    - [简约主题设置](#theme-setting)
 - [统计变换（Statistics）](#statistics)
 - [坐标系统（Coordinante）](#coordinante)
 - [分面（Facet）](#facet)
+- [画辅助线](#auxiliary-line)
 - [作分组箱线图并添加均值点连线及显著性程度标注](#boxplot-plus-siginfo)
     - [从头实现（不推荐）](#boxplot-plus-siginfo-mannual)
     - [使用ggsiginf包](#boxplot-plus-siginfo-use-ggsiginf)
 - [使用 RColorBrewer 扩展调色板](#use-RColorBrewer)
 - [使用ggbiplot画PCA图](#use-ggbiplot-plot-PCA)
+- [结合ggplot与grid实现坐标轴截断](#axis-break-based-on-ggplot-and-grid)
 
 
 
@@ -99,6 +102,20 @@ labs(x="Cut",y="Price",title="Price vs Cut")
 
 <p align="center"><img src=./picture/ggplot2-use-RColorBrewer-5.png width=700 /></p>
 
+<a name="theme-setting"><h3>简约主题设置 [<sup>目录</sup>](#content)</h3></a>
+
+```
+panel.background = element_blank()
+panel.border = element_blank()
+axis.line= element_line(colour = 'black')
+```
+
+
+
+
+
+
+
 <a name="statistics"><h2>统计变换（Statistics） [<sup>目录</sup>](#content)</h2></a>
 
 统计变换对原始数据进行某种计算，然后在图上表示出来
@@ -144,6 +161,17 @@ ggplot(small, aes(x=carat, y=price))+geom_point(aes(colour=cut))+scale_y_log10()
 ```
 
 <p align="center"><img src=./picture/ggplot2-facet.png width=600 /></p>
+
+<a name="auxiliary-line"><h2>画辅助线 [<sup>目录</sup>](#content)</h2></a>
+
+若想添加与x轴平行的辅助线，则可以使用`geom_hline`函数：
+
+```R
+geom_hline(aes(yintercept=0.1), lintype='dashed')
+```
+
+
+
 
 <a name="boxplot-plus-siginfo"><h2>作分组箱线图并添加均值点连线及显著性程度标注 [<sup>目录</sup>](#content)</h2></a>
 
@@ -392,6 +420,8 @@ grid.arrange(p1, p2, nrow=1, ncol=2,widths=c(3.5,1),heights=c(4))
 >   comparisons=lists(c('c1', 'c2'), c('c1', 'c3'), ...)
 >   ```
 
+test参数提供两种统计检验方法：t-test与wilcox
+
 <a name="use-RColorBrewer"><h2>使用 RColorBrewer 扩展调色板 [<sup>目录</sup>](#content)</h2></a>
 
 通过运行 `display.brewer.all()` ，可以查看RColorBrewer中提供的标准配色方案：
@@ -469,6 +499,34 @@ ggbiplot(wine.pca, obs.scale = 1, var.scale = 1,
 
 <p align="center"><img src=./picture/ggplot2-use-ggbiplot-plot-PCA.png width=700 /></p>
 
+<a name="axis-break-based-on-ggplot-and-grid"><h2>结合ggplot与grid实现坐标轴截断 [<sup>目录</sup>](#content)</h2></a>
+
+本质上就是通过在使用ggplot绘图过程中，使用`coord_cartesian`来截取指定范围内的图形部分，多次截取则得到多个子图，然后使用grid打开一个画布，将之前截取的多个子图在一个画布上拼凑出来
+
+```R
+#使用 coord_cartesian() 分割作图结果
+split1 <- bar_plot + coord_cartesian(ylim = c(0, 4)) + 
+    theme(legend.position='none')
+split2 <- bar_plot + coord_cartesian(ylim = c(4, 20)) + 
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = 'none')
+split3 <- bar_plot + coord_cartesian(ylim = c(60, 90)) + 
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = c(0.95, 0.7))
+```
+
+<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-grid.png /></p>
+
+```R
+library(grid)
+grid.newpage()
+plot_site1 <- viewport(x = 0.008, y = 0, width = 0.994, height = 0.4, just = c('left', 'bottom'))
+plot_site2 <- viewport(x = 0, y = 0.4, width = 1, height = 0.3, just = c('left', 'bottom'))
+plot_site3 <- viewport(x = 0, y = 0.7, width = 1, height = 0.3, just = c('left', 'bottom'))
+print(split1, vp = plot_site1)
+print(split2, vp = plot_site2)
+print(split3, vp = plot_site3)
+```
+
+<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-grid-2.png /></p>
 
 
 ---
@@ -482,3 +540,5 @@ ggbiplot(wine.pca, obs.scale = 1, var.scale = 1,
 (3) [使用 ggplot2 和 RColorBrewer 扩展调色板](https://www.cnblogs.com/shaocf/p/9600340.html)
 
 (4) [ggbiplot README](https://github.com/vqv/ggbiplot)
+
+(5) [ggplot2中绘制截断坐标轴的方法](https://blog.csdn.net/enyayang/article/details/98181357)
