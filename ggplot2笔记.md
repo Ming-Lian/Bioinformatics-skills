@@ -18,7 +18,7 @@
 - [使用 RColorBrewer 扩展调色板](#use-RColorBrewer)
 - [使用ggbiplot画PCA图](#use-ggbiplot-plot-PCA)
 - [结合ggplot与grid实现坐标轴截断](#axis-break-based-on-ggplot-and-grid)
-
+- [改变横坐标顺序](#reorder-x-axis)
 
 
 <h1 name="title">ggplot2笔记</h1>
@@ -528,6 +528,19 @@ print(split3, vp = plot_site3)
 
 <p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-grid-2.png /></p>
 
+<a name="reorder-x-axis"><h2>改变X轴标签顺序 [<sup>目录</sup>](#content)</h2></a>
+
+<p align="center"><img src=./picture/R-advanced-reorder-x-axis-1.png/></p>
+
+若想将上图的X轴标签的排列顺序改成下面的形式：
+
+<p align="center"><img src=./picture/R-advanced-reorder-x-axis-2.png/></p>
+
+只需将其所对应的factor类型的列的level进行设置即可，如下：
+
+```
+tt.data$group <- factor(tt.data$group, levels=c("B", "A", "C","D"), ordered=TRUE)
+```
 
 ---
 
@@ -542,3 +555,5 @@ print(split3, vp = plot_site3)
 (4) [ggbiplot README](https://github.com/vqv/ggbiplot)
 
 (5) [ggplot2中绘制截断坐标轴的方法](https://blog.csdn.net/enyayang/article/details/98181357)
+
+(6) [ggplot2调整X轴标签顺序](https://www.jianshu.com/p/437906c6b063)
