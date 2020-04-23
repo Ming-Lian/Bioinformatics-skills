@@ -12,14 +12,15 @@
 - [坐标系统（Coordinante）](#coordinante)
 - [分面（Facet）](#facet)
 - [画辅助线](#auxiliary-line)
-- [作分组箱线图并添加均值点连线及显著性程度标注](#boxplot-plus-siginfo)
-    - [从头实现（不推荐）](#boxplot-plus-siginfo-mannual)
-    - [使用ggsiginf包](#boxplot-plus-siginfo-use-ggsiginf)
 - [使用 RColorBrewer 扩展调色板](#use-RColorBrewer)
-- [使用ggbiplot画PCA图](#use-ggbiplot-plot-PCA)
 - [结合ggplot与grid实现坐标轴截断](#axis-break-based-on-ggplot-and-grid)
 - [改变横坐标顺序](#reorder-x-axis)
-
+- [特殊图形的绘制](#plot-special)
+  - [作分组箱线图并添加均值点连线及显著性程度标注](#boxplot-plus-siginfo)
+    - [从头实现（不推荐）](#boxplot-plus-siginfo-mannual)
+    - [使用ggsiginf包](#boxplot-plus-siginfo-use-ggsiginf)
+  - [使用ggbiplot画PCA图](#use-ggbiplot-plot-PCA)
+  - [使用gglorenz画洛伦兹曲线](#plot-lorenz-curve)
 
 <h1 name="title">ggplot2笔记</h1>
 
@@ -173,9 +174,110 @@ geom_hline(aes(yintercept=0.1), lintype='dashed')
 
 
 
-<a name="boxplot-plus-siginfo"><h2>作分组箱线图并添加均值点连线及显著性程度标注 [<sup>目录</sup>](#content)</h2></a>
 
-<a name="boxplot-plus-siginfo-mannual"><h3>从头实现（不推荐） [<sup>目录</sup>](#content)</h3></a>
+<a name="use-RColorBrewer"><h2>使用 RColorBrewer 扩展调色板 [<sup>目录</sup>](#content)</h2></a>
+
+通过运行 `display.brewer.all()` ，可以查看RColorBrewer中提供的标准配色方案：
+
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-1.png width=700 /></p>
+
+则在用ggplot2绘图时只需要在其中加上这样一句：
+
+```R
+... + scale_fill_brewer(palette="Set1") + ...
+```
+
+通过设置`palette`参数来选择合适的配色方案
+
+有时会遇到这样的情况：需要的颜色种类和提供的配色方案中所具有的颜色种类不匹配，一般是需要的颜色种类对于所能提供的，此时就可能报错：
+
+```R
+ggplot(mtcars) + 
+  geom_bar(aes(factor(hp), fill=factor(hp))) +
+  scale_fill_brewer(palette="Set2")
+
+Warning message:
+In RColorBrewer::brewer.pal(n, pal) : n too large, allowed maximum for palette Set2 is 8
+Returning the palette you asked for with that many colors
+```
+
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-2.png width=700 /></p>
+
+此时，RColorBrewer为我们提供了一种通过使用构造函数`colorRampPalette`插入现有调色板来生成更大调色板的方法
+
+```R
+colourCount = length(unique(mtcars$hp))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+ 
+ggplot(mtcars) + 
+  geom_bar(aes(factor(hp)), fill=getPalette(colourCount)) + 
+  theme(legend.position="right")
+```
+
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-3.png width=700 /></p>
+
+虽然我们解决了颜色不足的问题，但其他有趣的事情发生了：虽然所有的柱子都回来了并且涂上了不同颜色，但是我们也失去了颜色图例。我故意添加主题（`legend.position = ...`）来展示这个事实：尽管有明确的位置请求，但图例不再是图形的一部分
+
+原因在于：fill参数移动到柱状图aes函数之外 - 这有效地从ggplot的美学数据集中删除了fill信息。因此，legend没有应用到任何东西上
+
+要修复它，请将`fill`放回到`aes`中并使用`scale_fill_manual()`定义自定义调色板：
+
+```R
+ggplot(mtcars) + 
+  geom_bar(aes(factor(hp), fill=factor(hp))) + 
+  scale_fill_manual(values = getPalette(colourCount))
+```
+<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-4.png width=700 /></p>
+
+
+<a name="axis-break-based-on-ggplot-and-grid"><h2>结合ggplot与grid实现坐标轴截断 [<sup>目录</sup>](#content)</h2></a>
+
+本质上就是通过在使用ggplot绘图过程中，使用`coord_cartesian`来截取指定范围内的图形部分，多次截取则得到多个子图，然后使用grid打开一个画布，将之前截取的多个子图在一个画布上拼凑出来
+
+```R
+#使用 coord_cartesian() 分割作图结果
+split1 <- bar_plot + coord_cartesian(ylim = c(0, 4)) + 
+    theme(legend.position='none')
+split2 <- bar_plot + coord_cartesian(ylim = c(4, 20)) + 
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = 'none')
+split3 <- bar_plot + coord_cartesian(ylim = c(60, 90)) + 
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = c(0.95, 0.7))
+```
+
+<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-grid.png /></p>
+
+```R
+library(grid)
+grid.newpage()
+plot_site1 <- viewport(x = 0.008, y = 0, width = 0.994, height = 0.4, just = c('left', 'bottom'))
+plot_site2 <- viewport(x = 0, y = 0.4, width = 1, height = 0.3, just = c('left', 'bottom'))
+plot_site3 <- viewport(x = 0, y = 0.7, width = 1, height = 0.3, just = c('left', 'bottom'))
+print(split1, vp = plot_site1)
+print(split2, vp = plot_site2)
+print(split3, vp = plot_site3)
+```
+
+<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-grid-2.png /></p>
+
+<a name="reorder-x-axis"><h2>改变X轴标签顺序 [<sup>目录</sup>](#content)</h2></a>
+
+<p align="center"><img src=./picture/R-advanced-reorder-x-axis-1.png/></p>
+
+若想将上图的X轴标签的排列顺序改成下面的形式：
+
+<p align="center"><img src=./picture/R-advanced-reorder-x-axis-2.png/></p>
+
+只需将其所对应的factor类型的列的level进行设置即可，如下：
+
+```
+tt.data$group <- factor(tt.data$group, levels=c("B", "A", "C","D"), ordered=TRUE)
+```
+
+<a name="plot-specail"><h2>特殊图形的绘制 [<sup>目录</sup>](#content)</h2></a>
+
+<a name="boxplot-plus-siginfo"><h3>作分组箱线图并添加均值点连线及显著性程度标注 [<sup>目录</sup>](#content)</h3></a>
+
+<a name="boxplot-plus-siginfo-mannual"><h4>从头实现（不推荐） [<sup>目录</sup>](#content)</h4></a>
 
 <p align="center"><img src=./picture/ggplot2-boxplot-plus-siginfo-1.png width=600 /></p>
 
@@ -383,7 +485,7 @@ grid.arrange(p1, p2, nrow=1, ncol=2,widths=c(3.5,1),heights=c(4))
 
 <p align="center"><img src=./picture/ggplot2-boxplot-plus-siginfo-4.png width=600 /></p>
 
-<a name="boxplot-plus-siginfo-use-ggsiginf"><h3>使用ggsiginf包 [<sup>目录</sup>](#content)</h3></a>
+<a name="boxplot-plus-siginfo-use-ggsiginf"><h4>使用ggsiginf包 [<sup>目录</sup>](#content)</h4></a>
 
 官方文档：https://cran.r-project.org/web/packages/ggsignif/vignettes/intro.html
 
@@ -422,61 +524,7 @@ grid.arrange(p1, p2, nrow=1, ncol=2,widths=c(3.5,1),heights=c(4))
 
 test参数提供两种统计检验方法：t-test与wilcox
 
-<a name="use-RColorBrewer"><h2>使用 RColorBrewer 扩展调色板 [<sup>目录</sup>](#content)</h2></a>
-
-通过运行 `display.brewer.all()` ，可以查看RColorBrewer中提供的标准配色方案：
-
-<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-1.png width=700 /></p>
-
-则在用ggplot2绘图时只需要在其中加上这样一句：
-
-```R
-... + scale_fill_brewer(palette="Set1") + ...
-```
-
-通过设置`palette`参数来选择合适的配色方案
-
-有时会遇到这样的情况：需要的颜色种类和提供的配色方案中所具有的颜色种类不匹配，一般是需要的颜色种类对于所能提供的，此时就可能报错：
-
-```R
-ggplot(mtcars) + 
-  geom_bar(aes(factor(hp), fill=factor(hp))) +
-  scale_fill_brewer(palette="Set2")
-
-Warning message:
-In RColorBrewer::brewer.pal(n, pal) : n too large, allowed maximum for palette Set2 is 8
-Returning the palette you asked for with that many colors
-```
-
-<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-2.png width=700 /></p>
-
-此时，RColorBrewer为我们提供了一种通过使用构造函数`colorRampPalette`插入现有调色板来生成更大调色板的方法
-
-```R
-colourCount = length(unique(mtcars$hp))
-getPalette = colorRampPalette(brewer.pal(9, "Set1"))
- 
-ggplot(mtcars) + 
-  geom_bar(aes(factor(hp)), fill=getPalette(colourCount)) + 
-  theme(legend.position="right")
-```
-
-<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-3.png width=700 /></p>
-
-虽然我们解决了颜色不足的问题，但其他有趣的事情发生了：虽然所有的柱子都回来了并且涂上了不同颜色，但是我们也失去了颜色图例。我故意添加主题（`legend.position = ...`）来展示这个事实：尽管有明确的位置请求，但图例不再是图形的一部分
-
-原因在于：fill参数移动到柱状图aes函数之外 - 这有效地从ggplot的美学数据集中删除了fill信息。因此，legend没有应用到任何东西上
-
-要修复它，请将`fill`放回到`aes`中并使用`scale_fill_manual()`定义自定义调色板：
-
-```R
-ggplot(mtcars) + 
-  geom_bar(aes(factor(hp), fill=factor(hp))) + 
-  scale_fill_manual(values = getPalette(colourCount))
-```
-<p align="center"><img src=./picture/ggplot2-use-RColorBrewer-4.png width=700 /></p>
-
-<a name="use-ggbiplot-plot-PCA"><h2>使用ggbiplot画PCA图 [<sup>目录</sup>](#content)</h2></a>
+<a name="use-ggbiplot-plot-PCA"><h3>使用ggbiplot画PCA图 [<sup>目录</sup>](#content)</h3></a>
 
 安装
 
@@ -499,48 +547,20 @@ ggbiplot(wine.pca, obs.scale = 1, var.scale = 1,
 
 <p align="center"><img src=./picture/ggplot2-use-ggbiplot-plot-PCA.png width=700 /></p>
 
-<a name="axis-break-based-on-ggplot-and-grid"><h2>结合ggplot与grid实现坐标轴截断 [<sup>目录</sup>](#content)</h2></a>
-
-本质上就是通过在使用ggplot绘图过程中，使用`coord_cartesian`来截取指定范围内的图形部分，多次截取则得到多个子图，然后使用grid打开一个画布，将之前截取的多个子图在一个画布上拼凑出来
-
-```R
-#使用 coord_cartesian() 分割作图结果
-split1 <- bar_plot + coord_cartesian(ylim = c(0, 4)) + 
-    theme(legend.position='none')
-split2 <- bar_plot + coord_cartesian(ylim = c(4, 20)) + 
-    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = 'none')
-split3 <- bar_plot + coord_cartesian(ylim = c(60, 90)) + 
-    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = c(0.95, 0.7))
-```
-
-<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-grid.png /></p>
-
-```R
-library(grid)
-grid.newpage()
-plot_site1 <- viewport(x = 0.008, y = 0, width = 0.994, height = 0.4, just = c('left', 'bottom'))
-plot_site2 <- viewport(x = 0, y = 0.4, width = 1, height = 0.3, just = c('left', 'bottom'))
-plot_site3 <- viewport(x = 0, y = 0.7, width = 1, height = 0.3, just = c('left', 'bottom'))
-print(split1, vp = plot_site1)
-print(split2, vp = plot_site2)
-print(split3, vp = plot_site3)
-```
-
-<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-grid-2.png /></p>
-
-<a name="reorder-x-axis"><h2>改变X轴标签顺序 [<sup>目录</sup>](#content)</h2></a>
-
-<p align="center"><img src=./picture/R-advanced-reorder-x-axis-1.png/></p>
-
-若想将上图的X轴标签的排列顺序改成下面的形式：
-
-<p align="center"><img src=./picture/R-advanced-reorder-x-axis-2.png/></p>
-
-只需将其所对应的factor类型的列的level进行设置即可，如下：
+<a name="plot-lorenz-curve"><h3>使用gglorenz画洛伦兹曲线 [<sup>目录</sup>](#content)</h3></a>
 
 ```
-tt.data$group <- factor(tt.data$group, levels=c("B", "A", "C","D"), ordered=TRUE)
+library(ggplot2)
+library(gglorenz)
+
+Distr1 <- c( A=137, B=499, C=311, D=173, E=219, F=81)
+x <- data.frame(Distr1)
+
+ggplot(x, aes(Distr1)) + 
+  stat_lorenz() + 
+  geom_abline(color = "grey")
 ```
+
 
 ---
 
@@ -557,3 +577,6 @@ tt.data$group <- factor(tt.data$group, levels=c("B", "A", "C","D"), ordered=TRUE
 (5) [ggplot2中绘制截断坐标轴的方法](https://blog.csdn.net/enyayang/article/details/98181357)
 
 (6) [ggplot2调整X轴标签顺序](https://www.jianshu.com/p/437906c6b063)
+
+(7) [How to plot a nice Lorenz Curve for factors in R (ggplot ?)
+](https://stackoverflow.com/questions/22679493/how-to-plot-a-nice-lorenz-curve-for-factors-in-r-ggplot)
