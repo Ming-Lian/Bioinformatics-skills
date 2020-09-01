@@ -18,6 +18,7 @@
 - [10. 计算数组的长度：千万不要用length](#calc-array-length)
 - [11. 在哈希中设置键值为数组](#hash-key-point-to-arrary)
 - [12. 文件句柄引用](#filehandle-quote)
+- [13. 读写压缩文件](#zip-unzip-file)
 
 
 
@@ -55,25 +56,48 @@ die `pod2doc $0` if (...);
 
 <a name="getopt-long"><h2>2. 用Getopt::Long模块传参 [<sup>目录</sup>](#content)</h2></a>
 
-首先需要在脚本开头加上对该模块的引用
+每种编程语言几乎都有自己的参数解析解决方案，而在Perl中，我们基本选择使用`Getopt::Long`，它既可以解析单个字母的短选项（以一个连字符`-`开头，例如：`-l`），也可以解析长选项（以两个连字符`--`开头，例如：`--long`）
 
-```
+基本用法：
+
+```perl
 use Getopt::Long;
+my $data   = "file.dat"; # 设置默认参数data
+my $length = 24; # 设置默认参数length
+my $verbose;
+GetOptions ("length=i" => \$length, # 长选项"--length"，接受的参数为数值型（用字符i表示），并将其保存在length变量中
+    "file=s" => \$data,            # 长选项"--file"，接受的参数为字符型（用字符s表示），并将其保存在file变量中
+    "verbose" => \$verbose,        # 长选项"--verbose"不接受变量
+    "o=s" => \$out)                # 短选项"-o"接受的参数为字符型，并将其保存在out变量中
+or die("Error in command line arguments\n");
 ```
 
-使用GetOptions函数承接传递的参数：
+根据选项的字符长度，可以将选项分为：长选项和短选项
 
-```
-my ($var1,$var2,$var3,$var4); # 若使用"use strict"模式，则需要提前定义变量
-GetOptions(
-	"i:s"=>\$var1,
-	"o:s"=>\$var2,
-	"n:i"=>\$var3,
-	"m:i"=>\$var4
-	);
-```
+> 长选项由两个连字符起始，如`--long`，短选项由一个连字符起始，如`-l`
+>
+> 短选项可以绑定在一起写，例如`-l -a -c`可以写成`-lac`
+
+而根据选项后是否有参数值，可以将选项分为：无参选项和有参选项
+
+> 若是有参数的短选项，它有两种赋值方法，例如`-s 24`也可以写成`-s24`
+>
+> 若是有参数的长选项，它也有两种赋值方法，例如`--size 24`也可以写成`--size=24`
+>
+> 对于无参选项，对该选项按照以下原则进行解析赋值：若命令行中有用到这个选项，则将这个选项所对应的变量值设为`1/true`
+
 
 <a name="perl-command-one-line"><h2>3. perl单行 [<sup>目录</sup>](#content)</h2></a>
+
+Perl，专为文本处理而生的，在文本处理方面几乎无所不能
+
+但是一般来说实物都有它的两面性，功能强大灵活的代价是代码往往显得有些冗长，对于那些后续需要重复使用的脚本倒还可以接受，但是大多数情况下，你费半天劲写出来的冗长的脚本其实复用率很低，那么这样做就明显不够经济了，也明显不符合我们程序员的一切从简，能偷懒就尽量不多干的习性
+
+那么还有没有替代方案呢？
+
+办法总比问题多，你发现的问题，人家也早就发现了，所以Perl还有另外一种使用模式——Perl单行命令
+
+- **Perl单行命令的基本使用语法**
 
 执行`perl -h`可以查看perl的所有参数使用说明，使用perl单行需要使用到`-e`参数
 
@@ -95,13 +119,36 @@ BEGIN 和 END 区块根据需要进行添加
 
 若需要在逐行读取的同时，自动将行中的元素打散 (split)，默认以`\s`（空字符，即空格或制表符）作为分割符，则需要使用`-a`参数，相当于在执行了`@F = split $_`，打散后的元素会保存在`@F`中
 
-<a name="passing-parameters-in-perl-command-one-line"><h3>3.1. 向perl单行传参 [<sup>目录</sup>](#content)</h3></a>
+- **举个例子**
 
+举个例子让大家体会以下Perl单行命令的高效性
 
+例如，让你写一个命令来实现从Fasta文件中将所有的序列的Id
 
+用perl脚本来实现：
 
+```perl
+#!/usr/bin/perl -w
 
+$infile = $ARGV[0];
 
+open I,"<$infile" or die "$!\b";
+while(<I>){
+    chomp;
+    if(/^>(.*)$/){
+        print "$1\n";
+    }
+}
+close I;
+```
+
+用Perl单行命令实现：
+
+```bash
+$ perl -ne 'chomp;if(/^>(.*)$/){print "$1\n";}' in.fa
+```
+
+跟脚本版相比是不是明显简洁了很多？简单来说就是把脚本里的while里的部分拿出来，就成了perl单行命令
 
 
 <a name="trap-in-perl-command-one-line"><h3>3.2. perl单行里的坑 [<sup>目录</sup>](#content)</h3></a>
@@ -491,6 +538,35 @@ while(<$fh>){...}
 print {$data_fh} "your output content";
 ```
 
+<a name="zip-unzip-file"><h2>13. 读写压缩文件 [<sup>目录</sup>](#content)</h2></a>
+
+1. 使用管道的方法
+
+	```perl
+	# 读
+	open my $z, '-|', '/usr/bin/gunzip', '-c', 'moby_dick.txt.gz';
+	# 写
+	open my $z, '|-', '/usr/bin/gzip > data.gz';
+	```
+
+2. 使用PerlIO::gzip模块
+
+	```perl
+	# 读
+	use PerlIO::gzip;
+	open my $fh, '<:gzip', $filename or die "Could not read from $filename: $!";
+
+	while( <$fh> ) {
+    	print;
+    }
+
+	# 写
+	open my $fh, '>:gzip' $filename or die "Could not write to $filename: $!";
+
+	while(  ) {
+    	print { $fh } $_;
+    }
+	```
 
 
 
@@ -512,3 +588,6 @@ print {$data_fh} "your output content";
 
 (6) [perl---(数组和哈希)引用](https://blog.csdn.net/zll01/article/details/4506206)
 
+(7) [perldoc:Getopt::Long](https://perldoc.perl.org/Getopt/Long.html)
+
+(8) [Gzipping data directly from Perl](https://www.perl.com/article/162/2015/3/27/Gzipping-data-directly-from-Perl/)
