@@ -13,7 +13,7 @@
 - [分面（Facet）](#facet)
 - [画辅助线](#auxiliary-line)
 - [使用 RColorBrewer 扩展调色板](#use-RColorBrewer)
-- [坐标轴截断](#axis-break-based)
+- [坐标轴截断](#axis-break)
   - [ggplot + grid](#axis-break-based-on-ggplot-and-grid)
   - [ggplot + ggpubr](#axis-break-based-on-ggplot-and-ggpubr)
 - [改变横坐标顺序](#reorder-x-axis)
