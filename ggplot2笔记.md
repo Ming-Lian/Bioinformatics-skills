@@ -13,7 +13,9 @@
 - [分面（Facet）](#facet)
 - [画辅助线](#auxiliary-line)
 - [使用 RColorBrewer 扩展调色板](#use-RColorBrewer)
-- [结合ggplot与grid实现坐标轴截断](#axis-break-based-on-ggplot-and-grid)
+- [坐标轴截断](#axis-break-based)
+  - [ggplot + grid](#axis-break-based-on-ggplot-and-grid)
+  - [ggplot + ggpubr](#axis-break-based-on-ggplot-and-ggpubr)
 - [改变横坐标顺序](#reorder-x-axis)
 - [特殊图形的绘制](#plot-special)
   - [作分组箱线图并添加均值点连线及显著性程度标注](#boxplot-plus-siginfo)
@@ -229,8 +231,9 @@ ggplot(mtcars) +
 ```
 <p align="center"><img src=./picture/ggplot2-use-RColorBrewer-4.png width=700 /></p>
 
+<a name="axis-break"><h2>坐标轴截断 [<sup>目录</sup>](#content)</h2></a>
 
-<a name="axis-break-based-on-ggplot-and-grid"><h2>结合ggplot与grid实现坐标轴截断 [<sup>目录</sup>](#content)</h2></a>
+<a name="axis-break-based-on-ggplot-and-grid"><h3>ggplot + grid [<sup>目录</sup>](#content)</h3></a>
 
 本质上就是通过在使用ggplot绘图过程中，使用`coord_cartesian`来截取指定范围内的图形部分，多次截取则得到多个子图，然后使用grid打开一个画布，将之前截取的多个子图在一个画布上拼凑出来
 
@@ -258,6 +261,56 @@ print(split3, vp = plot_site3)
 ```
 
 <p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-grid-2.png /></p>
+
+<a name="axis-break-based-on-ggplot-and-ggpubr"><h3>ggplot + ggpubr [<sup>目录</sup>](#content)</h3></a>
+
+如何实现从A图到B图的转化呢？
+
+<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-ggpubr-1.jpg width=600/></p>
+
+只需要三步，画下面一半，画上面一半，拼起来即可
+
+（1）画下面一半
+
+```
+#导入包
+library(ggplot2)
+library(ggpubr)
+#数据
+data <- data.frame(x = c("Alpha","Bravo","Charlie","Delta"),y=c(200,20,10,15))
+#画下面
+p1 <- ggplot(data,aes(x=x,y=y,fill=x)) + geom_bar(stat='identity',position=position_dodge()) +
+  labs(x=NULL,y=NULL,fill=NULL)+    #可自定义标签名字
+  coord_cartesian(ylim = c(0,25))   #设置下面一半的值域
+```
+
+<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-ggpubr-2.png width=300/></p>
+
+（2）画上面一半
+
+```
+p2 <- ggplot(data,aes(x=x,y=y,fill=x)) + geom_bar(stat='identity',position=position_dodge()) +
+  labs(x=NULL,y=NULL,fill=NULL) +   #不要标签
+  theme(axis.text.x = element_blank(),axis.ticks.x = element_blank()) +     #去掉X轴和X轴的文字
+  coord_cartesian(ylim = c(195,205)) +  #设置上面一半的值域
+  scale_y_continuous(breaks = c(195,205,5)) #以5为单位划分Y轴
+```
+
+<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-ggpubr-3.png width=300/></p>
+
+（3）拼起来
+
+```
+ggarrange(p2,p1,heights=c(1/5, 4/5),ncol = 1, nrow = 2,common.legend = TRUE,legend="right",align = "v") 
+```
+
+<p align="center"><img src=./picture/ggplot2-axis-break-using-ggplot-ggpubr-4.png width=300/></p>
+
+> 排序为 p2 p1，即上面的图放上面，下面的图放下面
+>
+> `heights`: 两个图高度所占的比例，根据实际情况进行修改
+>
+> `align`: 这个参数很重要，对齐参数将上下两个图对齐，`h` 为水平对齐，`v` 为垂直对齐
 
 <a name="reorder-x-axis"><h2>改变X轴标签顺序 [<sup>目录</sup>](#content)</h2></a>
 
@@ -526,6 +579,12 @@ test参数提供两种统计检验方法：t-test与wilcox
 
 <a name="use-ggbiplot-plot-PCA"><h3>使用ggbiplot画PCA图 [<sup>目录</sup>](#content)</h3></a>
 
+注意：目前该R包已停止更新维护了，它对ggplot的版本有要求，目前已知可使用的版本为`ggplot2=3.0.0`，若想安装特点版本的ggplot2：
+
+```
+install_version('ggplot2',version='3.0.0')
+```
+
 安装
 
 ```R
@@ -576,7 +635,9 @@ ggplot(x, aes(Distr1)) +
 
 (5) [ggplot2中绘制截断坐标轴的方法](https://blog.csdn.net/enyayang/article/details/98181357)
 
-(6) [ggplot2调整X轴标签顺序](https://www.jianshu.com/p/437906c6b063)
+(6) [R语言—ggplot2画图如何截断 y 轴](https://www.jianshu.com/p/79331cb85a03)
 
-(7) [How to plot a nice Lorenz Curve for factors in R (ggplot ?)
+(7) [ggplot2调整X轴标签顺序](https://www.jianshu.com/p/437906c6b063)
+
+(8) [How to plot a nice Lorenz Curve for factors in R (ggplot ?)
 ](https://stackoverflow.com/questions/22679493/how-to-plot-a-nice-lorenz-curve-for-factors-in-r-ggplot)
