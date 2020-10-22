@@ -15,6 +15,10 @@
 - [10. 数字以科学计数法输出](#output-number-in-scientific-method)
 - [11. reshape2::melt的使用](#usage-of-reshape2-melt)
 - [12. 计算偏离系数](#calculate-Asymmetry-coefficient)
+- [13. plyr包](#plyr)
+  - [13.1. summarise 和 mutate 函数使用](#usage-of-summarise-and-mutate)
+- [14. R包安装的各种报错以及解决](#deal-with-package-install)
+
 
 
 
@@ -215,6 +219,7 @@ result.3   16
 
 注：
 
+
 <a name="r-vectorization-technology"><h2>3. R语言向量化技术 [<sup>目录</sup>](#content)</h2></a>
 
 什么是向量化计算呢？其实你可以简单的理解成这样：当我们在使用函数或者定义函数的时候发现，我们只能对单个数据进行运算。而这点显然不能满足我们的需求。那么如何使函数可以计算多个数据呢？这时就要采用向量化计算的方法了。
@@ -300,7 +305,7 @@ fun <- function(vec, data){
 
 可以采用分治方法（Divide-Conquer)，将原始大矩阵，按照行拆分成多个小的子块，对每个子块执行计算，从而得到每个子块的运算结果，最后再讲每个子块的结果进行合并：
 
-```
+```R
 n_row <- nrow(data)
 nblock <- 10 # 用于设定子块的数，用户可以自行指定
 # 该列表变量用于保存每个子块的计算结果，若总共拆成了m个子块，
@@ -511,6 +516,242 @@ $$\mu_k=\frac{1}{N}\sum_{i=1}^{N}(x_i-\overline{x})^k$$
 [1] -0.6149 
 ```
 
+<a name="plyr"><h2>13. plyr包 [<sup>目录</sup>](#content)</h2></a>
+
+<a name="usage-of-summarise-and-mutate"><h3>13.1. summarise 和 mutate 函数使用 [<sup>目录</sup>](#content)</h3></a>
+
+summarise和mutate是R中plyr包的两个函数。plyr是R中用来数据汇总的超强R包
+
+summarise和mutate函数都可以对一个数据框的某一列(而不是整个数据框)进行修改和汇总，两者的主要区别在于返回结果的方式不同，其中summarise函数返回一个只包含修改或汇总后数据的数据框，而mutate函数则返回一个由原始数据和修改或汇总后数据两部分构成的数据框
+
+例如：
+
+```
+require(plyr)
+set.seed(1) # 保证每次产生的数据框的唯一性
+dfx <- data.frame(
+  group = c(rep('A', 8), rep('B', 15), rep('C', 6)),
+  sex = sample(c("M", "F"), size = 29, replace = TRUE),
+  age = sample(20:30, size = 29, replace = TRUE),
+  worktime = sample(1:5, size = 29, replace = TRUE)
+)
+### 数据修改
+summarise(dfx, age = age + 1) # 返回一个只含一列age的数据框
+mutate(dfx, age = age + 1) # 返回一个和dfx列数一样的4列数据框，但age列的数值已经修改
+### 数据汇总
+summarise(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个只含汇总结果的2列数据框
+mutate(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个由dfx和汇总结果组成的4列数据框
+```
+
+<a name="deal-with-package-install"><h2>14. R包安装的各种报错以及解决 [<sup>目录</sup>](#content)</h2></a>
+
+（1）报错关键信息：`Error in if (nzchar(SHLIB_LIBADD)) SHLIB_LIBADD else character() : argument is of length zero`
+
+参数缺失的报错，找到R安装目录下 `R/etc` 下是否有 `Makeconf` 这个文件，如果是Conda下的R，路径应该为：`Conda_path/lib/R/etc/Makeconf`
+
+先查看这个文件是否存在，如果存在，看看是否是空文件，如果是空文件，将以下内容复制到这个文件中：
+
+```
+# etc/Makeconf.  Generated from Makeconf.in by configure.
+#
+# ${R_HOME}/etc/Makeconf
+#
+# R was configured using the following call
+# (not including env. vars and site configuration)
+# configure  '--prefix=/miniconda3/envs/tcga' '--host=x86_64-conda_cos6-linux-gnu' '--build=x86_64-conda_cos6-linux-gnu' '--enable-shared' '--enable-R-shlib' '--with-blas=-lblas' '--with-lapack=-llapack' '--disable-prebuilt-html' '--enable-memory-profiling' '--with-tk-config=/miniconda3/envs/tcga/lib/tkConfig.sh' '--with-tcl-config=/miniconda3/envs/tcga/lib/tclConfig.sh' '--with-x' '--with-pic' '--with-cairo' '--with-readline' '--with-recommended-packages=no' '--without-libintl-prefix' 'LIBnn=lib' 'build_alias=x86_64-conda_cos6-linux-gnu' 'host_alias=x86_64-conda_cos6-linux-gnu' 'PKG_CONFIG_PATH=/miniconda3/envs/tcga/lib/pkgconfig' 'CC=x86_64-conda_cos6-linux-gnu-cc' 'CFLAGS=-march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix' 'LDFLAGS=-Wl,-O2 -Wl,--sort-common -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -Wl,--disable-new-dtags -Wl,--gc-sections -Wl,-rpath,/miniconda3/envs/tcga/lib -Wl,-rpath-link,/miniconda3/envs/tcga/lib -L/miniconda3/envs/tcga/lib -Wl,-rpath-link,/miniconda3/envs/tcga/lib' 'CPPFLAGS=-DNDEBUG -D_FORTIFY_SOURCE=2 -O2 -isystem /miniconda3/envs/tcga/include -I/miniconda3/envs/tcga/include -Wl,-rpath-link,/miniconda3/envs/tcga/lib' 'CPP=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/_build_env/bin/x86_64-conda_cos6-linux-gnu-cpp' 'FC=x86_64-conda_cos6-linux-gnu-gfortran' 'CXX=x86_64-conda_cos6-linux-gnu-c++' 'CXXFLAGS=-fvisibility-inlines-hidden  -fmessage-length=0 -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix' 'OBJC=x86_64-conda_cos6-linux-gnu-cc'
+
+## This fails if it contains spaces, or if it is quoted
+include $(R_SHARE_DIR)/make/vars.mk
+
+AR = x86_64-conda_cos6-linux-gnu-ar
+BLAS_LIBS = -lblas
+C_VISIBILITY = -fvisibility=hidden
+CC = x86_64-conda_cos6-linux-gnu-cc
+CFLAGS = -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix $(LTO)
+CPICFLAGS = -fpic
+CPPFLAGS = -DNDEBUG -D_FORTIFY_SOURCE=2 -O2 -isystem /miniconda3/envs/tcga/include -I/miniconda3/envs/tcga/include -Wl,-rpath-link,/miniconda3/envs/tcga/lib
+CXX = x86_64-conda_cos6-linux-gnu-c++ -std=gnu++11
+## Not used by anything in R, in particular not for the .cc.d rule
+## but used via R CMD config by several packages
+CXXCPP = $(CXX) -E
+CXXFLAGS = -fvisibility-inlines-hidden  -fmessage-length=0 -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix $(LTO)
+CXXPICFLAGS = -fpic
+CXX11 = x86_64-conda_cos6-linux-gnu-c++
+CXX11FLAGS = -fvisibility-inlines-hidden  -fmessage-length=0 -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix $(LTO)
+CXX11PICFLAGS = -fpic
+CXX11STD = -std=gnu++11
+CXX14 = x86_64-conda_cos6-linux-gnu-c++
+CXX14FLAGS = -fvisibility-inlines-hidden  -fmessage-length=0 -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix $(LTO)
+CXX14PICFLAGS = -fpic
+CXX14STD = -std=gnu++14
+CXX17 = x86_64-conda_cos6-linux-gnu-c++
+CXX17FLAGS = -fvisibility-inlines-hidden  -fmessage-length=0 -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix $(LTO)
+CXX17PICFLAGS = -fpic
+CXX17STD = -std=gnu++17
+CXX20 =
+CXX20FLAGS =  $(LTO)
+CXX20PICFLAGS =
+CXX20STD =
+CXX_VISIBILITY = -fvisibility=hidden
+DYLIB_EXT = .so
+DYLIB_LD = $(CC)
+DYLIB_LDFLAGS = -shared -fopenmp# $(CFLAGS) $(CPICFLAGS)
+DYLIB_LINK = $(DYLIB_LD) $(DYLIB_LDFLAGS) $(LDFLAGS)
+ECHO = echo
+ECHO_C =
+ECHO_N = -n
+ECHO_T =
+F_VISIBILITY = -fvisibility=hidden
+## FC is the compiler used for all Fortran as from R 3.6.0
+FC = x86_64-conda_cos6-linux-gnu-gfortran
+FCFLAGS = -fopenmp -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix $(LTO)
+## additional libs needed when linking with $(FC), e.g. on some Oracle compilers
+FCLIBS_XTRA =
+FFLAGS = -fopenmp -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix $(LTO)
+FLIBS =  -lgfortran -lm -lgomp -lquadmath -lpthread
+FPICFLAGS = -fpic
+FOUNDATION_CPPFLAGS =
+FOUNDATION_LIBS =
+JAR = /usr/bin/jar
+JAVA = /usr/bin/java
+JAVAC = /usr/bin/javac
+JAVAH = /usr/bin/javah
+## JAVA_HOME might be used in the next three.
+## They are for packages 'JavaGD' and 'rJava'
+JAVA_HOME = /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.181-7.b13.el7.x86_64/jre
+JAVA_CPPFLAGS = -I$(JAVA_HOME)/../include -I$(JAVA_HOME)/../include/linux
+JAVA_LIBS = -L$(JAVA_HOME)/lib/amd64/server -ljvm
+JAVA_LD_LIBRARY_PATH = $(JAVA_HOME)/lib/amd64/server
+LAPACK_LIBS = -llapack
+LDFLAGS = -Wl,-O2 -Wl,--sort-common -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -Wl,--disable-new-dtags -Wl,--gc-sections -Wl,-rpath,/miniconda3/envs/tcga/lib -Wl,-rpath-link,/miniconda3/envs/tcga/lib -L/miniconda3/envs/tcga/lib -Wl,-rpath-link,/miniconda3/envs/tcga/lib
+## we only need this is if it is external, as otherwise link to R
+LIBINTL=
+LIBM = -lm
+LIBR0 = -L"$(R_HOME)/lib$(R_ARCH)"
+LIBR1 = -lR
+LIBR = -L"$(R_HOME)/lib$(R_ARCH)" -lR
+LIBS = -L/miniconda3/envs/tcga/lib -lpcre2-8 -llzma -lbz2 -lz -lrt -ldl -lm -liconv -licuuc -licui18n
+## needed by R CMD config
+LIBnn = lib
+LIBTOOL = $(SHELL) "$(R_HOME)/bin/libtool"
+LTO =
+## needed to build applications linking to static libR
+MAIN_LD = $(CC)
+MAIN_LDFLAGS = -Wl,--export-dynamic -fopenmp
+RPATH_LDFLAGS = -Wl,-rpath,$(abs_top_builddir)/lib -Wl,-rpath,/miniconda3/envs/tcga/lib
+MAIN_LINK = $(MAIN_LD) $(MAIN_LDFLAGS) $(LDFLAGS) $(RPATH_LDFLAGS)
+MKINSTALLDIRS = "$(R_HOME)/bin/mkinstalldirs"
+OBJC = x86_64-conda_cos6-linux-gnu-cc
+OBJCFLAGS = -g -O2 -fobjc-exceptions $(LTO)
+OBJC_LIBS =
+OBJCXX =
+R_ARCH =
+RANLIB = x86_64-conda_cos6-linux-gnu-ranlib
+SAFE_FFLAGS = -fopenmp -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /miniconda3/envs/tcga/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/r-base_1595316670215/work=/usr/local/src/conda/r-base-4.0.2 -fdebug-prefix-map=/miniconda3/envs/tcga=/usr/local/src/conda-prefix -msse2 -mfpmath=sse
+SED = /miniconda3/envs/tcga/bin/sed
+SHELL = /bin/sh
+SHLIB_CFLAGS =
+SHLIB_CXXFLAGS =
+SHLIB_CXXLD = $(CXX)
+SHLIB_CXXLDFLAGS = -shared
+SHLIB_CXX11LD = $(CXX11) $(CXX11STD)
+SHLIB_CXX11LDFLAGS = -shared
+SHLIB_CXX14LD = $(CXX14) $(CXX14STD)
+SHLIB_CXX14LDFLAGS = -shared
+SHLIB_CXX17LD = $(CXX17) $(CXX17STD)
+SHLIB_CXX17LDFLAGS = -shared
+SHLIB_CXX20LD = $(CXX20) $(CXX20STD)
+SHLIB_CXX20LDFLAGS = -shared
+SHLIB_EXT = .so
+SHLIB_FFLAGS =
+SHLIB_LD = $(CC)
+SHLIB_LDFLAGS = -shared# $(CFLAGS) $(CPICFLAGS)
+SHLIB_LIBADD = 
+## We want to ensure libR is picked up from $(R_HOME)/lib
+## before e.g. /usr/local/lib if a version is already installed.
+SHLIB_LINK = $(SHLIB_LD) $(SHLIB_LDFLAGS) $(LIBR0) $(LDFLAGS)
+SHLIB_OPENMP_CFLAGS = -fopenmp
+SHLIB_OPENMP_CXXFLAGS = -fopenmp
+SHLIB_OPENMP_FFLAGS =
+STRIP_STATIC_LIB = x86_64-conda_cos6-linux-gnu-strip --strip-debug
+STRIP_SHARED_LIB = x86_64-conda_cos6-linux-gnu-strip --strip-unneeded
+TCLTK_CPPFLAGS = -I/miniconda3/envs/tcga/include -I/miniconda3/envs/tcga/include
+TCLTK_LIBS = -L/miniconda3/envs/tcga/lib -ltcl8.6 -L/miniconda3/envs/tcga/lib -ltk8.6 -lX11
+YACC = yacc
+
+## Legacy settings: these might be used in a src/Makefile
+SHLIB_FCLD = $(FC)
+SHLIB_FCLDFLAGS = -shared
+
+
+## for linking to libR.a
+STATIC_LIBR = # -Wl,--whole-archive "$(R_HOME)/lib$(R_ARCH)/libR.a" -Wl,--no-whole-archive $(BLAS_LIBS) $(FLIBS)  $(LIBINTL) -lreadline  $(LIBS)
+
+## These are recorded as macros for legacy use in packages
+## set on AIX, formerly for old glibc (-D__NO_MATH_INLINES)
+R_XTRA_CFLAGS =
+##  was formerly set on HP-UX
+R_XTRA_CPPFLAGS =  -I"$(R_INCLUDE_DIR)" -DNDEBUG
+## currently unset
+R_XTRA_CXXFLAGS =
+## used for gfortran in R > 3.6.0
+R_XTRA_FFLAGS = -fno-optimize-sibling-calls
+
+## CXX98 is no longer supported, but packages may use it.
+SHLIB_CXX98LD = @SHLIB_CXX98LD@
+SHLIB_CXX98LDFLAGS = @SHLIB_CXX98LDFLAGS@
+
+## SHLIB_CFLAGS SHLIB_CXXFLAGS SHLIB_FFLAGS are apparently currently unused
+## SHLIB_CXXFLAGS is undocumented, there is no SHLIB_FCFLAGS
+ALL_CFLAGS =  $(PKG_CFLAGS) $(CPICFLAGS) $(SHLIB_CFLAGS) $(CFLAGS)
+ALL_CPPFLAGS =  -I"$(R_INCLUDE_DIR)" -DNDEBUG $(PKG_CPPFLAGS) $(CLINK_CPPFLAGS) $(CPPFLAGS)
+ALL_CXXFLAGS =  $(PKG_CXXFLAGS) $(CXXPICFLAGS) $(SHLIB_CXXFLAGS) $(CXXFLAGS)
+ALL_OBJCFLAGS = $(PKG_OBJCFLAGS) $(CPICFLAGS) $(SHLIB_CFLAGS) $(OBJCFLAGS)
+ALL_OBJCXXFLAGS = $(PKG_OBJCXXFLAGS) $(CXXPICFLAGS) $(SHLIB_CXXFLAGS) $(OBJCXXFLAGS)
+ALL_FFLAGS = -fno-optimize-sibling-calls $(PKG_FFLAGS) $(FPICFLAGS) $(SHLIB_FFLAGS) $(FFLAGS)
+## can be overridden by R CMD SHLIB
+P_FCFLAGS = $(PKG_FFLAGS)
+ALL_FCFLAGS = -fno-optimize-sibling-calls $(P_FCFLAGS) $(FPICFLAGS) $(SHLIB_FFLAGS) $(FCFLAGS)
+## LIBR here as a couple of packages use this without SHLIB_LINK
+ALL_LIBS = $(PKG_LIBS) $(SHLIB_LIBADD) $(LIBR)# $(LIBINTL)
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .cpp .d .f .f90 .f95 .m .mm .M .o
+
+.c.o:
+	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
+.c.d:
+	@echo "making $@ from $<"
+	@$(CC) -MM $(ALL_CPPFLAGS) $< > $@
+.cc.o:
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
+.cpp.o:
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
+.cc.d:
+	@echo "making $@ from $<"
+	@$(CXX) -M $(ALL_CPPFLAGS) $< > $@
+.cpp.d:
+	@echo "making $@ from $<"
+	@$(CXX) -M $(ALL_CPPFLAGS) $< > $@
+.m.o:
+	$(OBJC) $(ALL_CPPFLAGS) $(ALL_OBJCFLAGS) -c $< -o $@
+.m.d:
+	@echo "making $@ from $<"
+	@$(OBJC) -MM $(ALL_CPPFLAGS) $< > $@
+.mm.o:
+	$(OBJCXX) $(ALL_CPPFLAGS) $(ALL_OBJCXXFLAGS) -c $< -o $@
+.M.o:
+	$(OBJCXX) $(ALL_CPPFLAGS) $(ALL_OBJCXXFLAGS) -c $< -o $@
+.f.o:
+	$(FC) $(ALL_FFLAGS) -c $< -o $@
+## @FCFLAGS_f9x@ are flags needed to recognise the extensions
+.f95.o:
+	$(FC) $(ALL_FCFLAGS) -c  $< -o $@
+.f90.o:
+	$(FC) $(ALL_FCFLAGS) -c  $< -o $@
+```
+
+
 ---
 
 参考资料：
@@ -524,3 +765,9 @@ $$\mu_k=\frac{1}{N}\sum_{i=1}^{N}(x_i-\overline{x})^k$$
 (4) [统计之都《R 与并行计算》](https://cosx.org/2016/09/r-and-parallel-computing)
 
 (5) [R Tutorial eBook: Skewness](http://www.r-tutor.com/elementary-statistics/numerical-measures/skewness)
+
+(6) [summarise 和 mutate 函数使用](http://xukuang.github.io/blog/2014/06/dots-in-plyr-of-r-packages/)
+
+(7) [[ERROR] R包安装的 non-zero exit](https://zhuanlan.zhihu.com/p/46077702)
+
+(8) [【R语言】无法安装一些包](https://d.cosx.org/d/154773-154773)
