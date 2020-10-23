@@ -22,7 +22,7 @@
   - [14.1. dplyr的管道操作%>%](#dplyr-pipe)
   - [14.2. summarise 和 mutate 函数使用](#dplyr-summarise-and-mutate)
   - [14.3. 其他数据筛选与修改操作](#dplyr-other-utility)
-
+- [15. 用do.call整理lapply的结果](#reshape-output-from-lapply)
 
 
 
@@ -828,7 +828,7 @@ summarise(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个只含汇�
 mutate(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个由dfx和汇总结果组成的4列数据框
 ```
 
-<a name="dplyr-pipe"><h2>14.2. dplyr的管道操作%>% [<sup>目录</sup>](#content)</h2></a>
+<a name="dplyr-pipe"><h3>14.2. dplyr的管道操作%>% [<sup>目录</sup>](#content)</h3></a>
 
 `％>％`来自dplyr包的管道函数，类似于Shell命令中的管道`|`
 
@@ -915,7 +915,7 @@ mutate(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个由dfx和汇�
 > dat1 <- dat %>% unite(datehour, date, hour, sep = ' ') %>% unite(datetime, datehour, min, second, sep = ':')
 > ```
 
-<a name="dplyr-other-utility"><h2>14.3. 其他数据筛选与修改操作 [<sup>目录</sup>](#content)</h2></a>
+<a name="dplyr-other-utility"><h3>14.3. 其他数据筛选与修改操作 [<sup>目录</sup>](#content)</h3></a>
 
 数据筛选：
 
@@ -923,7 +923,17 @@ mutate(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个由dfx和汇�
 
 `select`：选择指定列
 
+<a name="reshape-output-from-lapply"><h2>15. 用do.call整理lapply的结果 [<sup>目录</sup>](#content)</h2></a>
 
+`lapply`实现的功能是将输入的list的每个元素注意进行处理，并将处理后的每个元素的结果分别保存为一个list元素，即输入为list，输出也是list
+
+此时，如果想要将输出的list形式的结果，整理成比较规整的形式，例如，原先的list中的每个元素是一个数据框，需要将它们按照行进行拼接，即使用`rbind`时实现这个拼接操作，得到一个拼接后的大数据框，可以这样：
+
+```R
+do.call('rbind', lapply(list, fun))
+```
+
+即，通过`do.call`，将list的每一个元素逐一传递给`rbind`，作为它的多个输入参数，以`rbind(list[1], list[2], ...)`的形式来执行
 
 ---
 
