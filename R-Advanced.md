@@ -13,11 +13,15 @@
 - [8. 关于超大矩阵运算的思考](#think-of-vast-matrix)
 - [9. optparse的使用](#usage-of-optparse)
 - [10. 数字以科学计数法输出](#output-number-in-scientific-method)
-- [11. reshape2::melt的使用](#usage-of-reshape2-melt)
+- [11. reshape2包](#use-reshape2)
+  - [11.1. melt：将短数据框转化为长数据框](#reshape2-melt)
+  - [11.2. dcast：将长数据框转化为短数据框](#reshape2-dcast)
 - [12. 计算偏离系数](#calculate-Asymmetry-coefficient)
-- [13. plyr包](#plyr)
-  - [13.1. summarise 和 mutate 函数使用](#usage-of-summarise-and-mutate)
-- [14. R包安装的各种报错以及解决](#deal-with-package-install)
+- [13. R包安装的各种报错以及解决](#deal-with-package-install)
+- [14. dplyr包的使用](#use-dplyr)
+  - [14.1. dplyr的管道操作%>%](#dplyr-pipe)
+  - [14.2. summarise 和 mutate 函数使用](#dplyr-summarise-and-mutate)
+  - [14.3. 其他数据筛选与修改操作](#dplyr-other-utility)
 
 
 
@@ -467,11 +471,13 @@ cat("\n")
 format(0.00001, scientific=TRUE, digit=2)
 ```
 
-<a name="usage-of-reshape2-melt"><h2>11. reshape2::melt的使用 [<sup>目录</sup>](#content)</h2></a>
+<a name="use-reshape2"><h2>11. reshape2包 [<sup>目录</sup>](#content)</h2></a>
+
+<a name="reshape2-melt"><h3>11.1. melt：将短数据框转化为长数据框 [<sup>目录</sup>](#content)</h3></a>
 
 reshape2::melt常用于将短表格转换成长表格，以用于ggplot绘图
 
-段表格示例：
+短表格示例：
 
 | Id | Var1 | Var2 | Var3 |
 |:---:|:---:|:---:|:---:|
@@ -499,6 +505,38 @@ reshape2::melt常用于将短表格转换成长表格，以用于ggplot绘图
 Y <- melt(X, id.vars=1)
 ```
 
+<a name="reshape2-dcast"><h3>11.1. dcast：将长数据框转化为短数据框 [<sup>目录</sup>](#content)</h3></a>
+
+reshape2::melt常用于将长表格转换成短表格
+
+长表格示例：
+
+| Id | VAR | VALUE |
+|:---:|:---:|:---:|
+| Id1 | Var1 | a1 |
+| Id1 | Var2 | b1 |
+| Id1 | Var3 | c1 |
+| Id2 | Var1 | a2 |
+| Id2 | Var2 | b2 |
+| Id2 | Var3 | c2 |
+| Id3 | Var1 | a3 |
+| Id3 | Var2 | b3 |
+| Id3 | Var3 | c3 |
+
+其对应的长表格为：
+
+| Id | Var1 | Var2 | Var3 |
+|:---:|:---:|:---:|:---:|
+| Id1 | a1 | b1 | c1 |
+| Id2 | a2 | b2 | c2 |
+| Id3 | a3 | b3 | c3 |
+
+假设原始的短表格保存在数据框变量X中，现要将其转换成以Id列为唯一记录识别项，其他项作为测量项的长表格Y，则可以通过下面的命令实现：
+
+```
+Y <- dcast(X, Id~VAR, fun.aggregate = sum, value.var = 'VALUE')
+```
+
 <a name="calculate-Asymmetry-coefficient"><h2>12. 计算偏离系数 [<sup>目录</sup>](#content)</h2></a>
 
 $$\gamma_1=\frac{\mu_3}{\mu_2^{3 \over 2}}$$
@@ -516,34 +554,9 @@ $$\mu_k=\frac{1}{N}\sum_{i=1}^{N}(x_i-\overline{x})^k$$
 [1] -0.6149 
 ```
 
-<a name="plyr"><h2>13. plyr包 [<sup>目录</sup>](#content)</h2></a>
 
-<a name="usage-of-summarise-and-mutate"><h3>13.1. summarise 和 mutate 函数使用 [<sup>目录</sup>](#content)</h3></a>
 
-summarise和mutate是R中plyr包的两个函数。plyr是R中用来数据汇总的超强R包
-
-summarise和mutate函数都可以对一个数据框的某一列(而不是整个数据框)进行修改和汇总，两者的主要区别在于返回结果的方式不同，其中summarise函数返回一个只包含修改或汇总后数据的数据框，而mutate函数则返回一个由原始数据和修改或汇总后数据两部分构成的数据框
-
-例如：
-
-```
-require(plyr)
-set.seed(1) # 保证每次产生的数据框的唯一性
-dfx <- data.frame(
-  group = c(rep('A', 8), rep('B', 15), rep('C', 6)),
-  sex = sample(c("M", "F"), size = 29, replace = TRUE),
-  age = sample(20:30, size = 29, replace = TRUE),
-  worktime = sample(1:5, size = 29, replace = TRUE)
-)
-### 数据修改
-summarise(dfx, age = age + 1) # 返回一个只含一列age的数据框
-mutate(dfx, age = age + 1) # 返回一个和dfx列数一样的4列数据框，但age列的数值已经修改
-### 数据汇总
-summarise(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个只含汇总结果的2列数据框
-mutate(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个由dfx和汇总结果组成的4列数据框
-```
-
-<a name="deal-with-package-install"><h2>14. R包安装的各种报错以及解决 [<sup>目录</sup>](#content)</h2></a>
+<a name="deal-with-package-install"><h2>13. R包安装的各种报错以及解决 [<sup>目录</sup>](#content)</h2></a>
 
 （1）报错关键信息：`Error in if (nzchar(SHLIB_LIBADD)) SHLIB_LIBADD else character() : argument is of length zero`
 
@@ -751,6 +764,166 @@ ALL_LIBS = $(PKG_LIBS) $(SHLIB_LIBADD) $(LIBR)# $(LIBINTL)
 	$(FC) $(ALL_FCFLAGS) -c  $< -o $@
 ```
 
+注意：上面需要修改的位置：
+
+> - 将每个匹配上`/miniconda3/envs/tcga/`的位置，修改成你当前conda的安装路径
+>
+> - 将`SED = /miniconda3/envs/tcga/bin/sed`中sed的路径设置为当前sed的实际路径
+
+（2）报错信息：`ERROR: failed to lock directory 'C:/Users/MSI-NB/Documents/R/win-library/4.0' for modifying`
+
+这时如果查看对应安装包的文件夹（例子中是win-library/4.0），会发现多了一个叫做“00LOCK-rlang”（或者直接叫“00LOCK”）的文件夹。
+
+错误产生原因：
+
+> 出于防止其他安装过程干扰和暂存旧版本的目的，R在安装X包时会先建立并锁定一个叫00LOCK-X的临时文件夹。安装完毕后如果由于某种原因该临时文件夹没有被删除的话，下次更新可能会因为锁定失败而gg。
+
+解决方案：
+
+> 1. `install.packages()` 加上`INSTALL_opts = '--no-lock'`：
+> 
+> ```R
+> install.packages("your_package", INSTALL_opts = '--no-lock')
+> ```
+> 
+> 2. 删除00LOCK-rlang文件夹，后续照常安装即可
+
+（3）报错信息：
+
+```
+../x86_64-conda_cos6-linux-gnu/bin/ld: cannot find -llapack
+../x86_64-conda_cos6-linux-gnu/bin/ld: cannot find -lblas
+```
+
+本质上就是少了两个基本库工具，如果是在conda环境下，可以用下面的命令安装：
+
+```shell
+conda install -c conda-forge lapack
+```
+
+<a name="use-dplyr"><h2>14. dplyr包 [<sup>目录</sup>](#content)</h2></a>
+
+<a name="dplyr-summarise-and-mutate"><h3>14.1. summarise 和 mutate 函数使用 [<sup>目录</sup>](#content)</h3></a>
+
+summarise和mutate是R中plyr包的两个函数。plyr是R中用来数据汇总的超强R包
+
+summarise和mutate函数都可以对一个数据框的某一列(而不是整个数据框)进行修改和汇总，两者的主要区别在于返回结果的方式不同，其中summarise函数返回一个只包含修改或汇总后数据的数据框，而mutate函数则返回一个由原始数据和修改或汇总后数据两部分构成的数据框
+
+例如：
+
+```R
+require(plyr)
+set.seed(1) # 保证每次产生的数据框的唯一性
+dfx <- data.frame(
+  group = c(rep('A', 8), rep('B', 15), rep('C', 6)),
+  sex = sample(c("M", "F"), size = 29, replace = TRUE),
+  age = sample(20:30, size = 29, replace = TRUE),
+  worktime = sample(1:5, size = 29, replace = TRUE)
+)
+### 数据修改
+summarise(dfx, age = age + 1) # 返回一个只含一列age的数据框
+mutate(dfx, age = age + 1) # 返回一个和dfx列数一样的4列数据框，但age列的数值已经修改
+### 数据汇总
+summarise(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个只含汇总结果的2列数据框
+mutate(dfx, mean.age = mean(age), sd.age = sd(age)) # 返回一个由dfx和汇总结果组成的4列数据框
+```
+
+<a name="dplyr-pipe"><h2>14.2. dplyr的管道操作%>% [<sup>目录</sup>](#content)</h2></a>
+
+`％>％`来自dplyr包的管道函数，类似于Shell命令中的管道`|`
+
+其作用是将前一步的结果直接传参给下一步的函数，从而省略了中间的赋值步骤，可以大量减少内存中的对象，节省内存
+
+举一个简单的例子：
+
+> 比如我们要算f(x)=sin((x+1)^2)在x=4的值，可以分为以下三步：
+> 
+> （1）计算`a = x+1`的值；
+> 
+> （2）计算`b = a^2`的值；
+> 
+> （3）计算`c = sin(b)`的值
+> 
+> 这样一来，c就是我们需要的最终结果了
+>
+> 用R语言管道传参，只需要这样写：
+> 
+> ```R
+> f1 <- function(x){return(x+1)}
+> f2 <- function(x){return(x^2)}
+> f3 <- function(x){return(sin(x))}
+> a <- 1
+> b <- a %>% f1 %>% f2 %>% f3
+> 
+> print(b)
+> [1] -0.7568025
+> ```
+
+管道传参的具体用法：
+
+> `a %>% f(b)`等同于`f(a,b)`；
+> 
+> `b %>% f(a,.,c)`等同于`f(a,b,c)`；
+
+应用实例：
+
+> 给定以下格式的数据框：
+> 
+> ```
+>          date hour min second
+> 1  2017-06-22    8  35     34
+> 2  2017-06-23   20  26     27
+> 3  2017-06-24    4  56     10
+> 4  2017-06-25    3   4     16
+> 5  2017-06-26    1  30     52
+> 6  2017-06-27   12  22      9
+> 7  2017-06-28    5   5     35
+> 8  2017-06-29    2   7      4
+> 9  2017-06-30   15  39     54
+> 10 2017-07-01   14  13      3
+> 11 2017-07-02   22   1     29
+> 12 2017-07-03    7  60     11
+> 13 2017-07-04    6  41      8
+> 14 2017-07-05   21  11     40
+> 15 2017-07-06   16  33     60
+> ```
+>
+> 将其变成标准时间格式:
+>
+> ```
+>              datetime
+> 1   2017-06-22 8:35:34
+> 2  2017-06-23 20:26:27
+> 3   2017-06-24 4:56:10
+> 4    2017-06-25 3:4:16
+> 5   2017-06-26 1:30:52
+> 6   2017-06-27 12:22:9
+> 7    2017-06-28 5:5:35
+> 8     2017-06-29 2:7:4
+> 9  2017-06-30 15:39:54
+> 10  2017-07-01 14:13:3
+> 11  2017-07-02 22:1:29
+> 12  2017-07-03 7:60:11
+> 13   2017-07-04 6:41:8
+> 14 2017-07-05 21:11:40
+> 15 2017-07-06 16:33:60
+> ```
+> 
+> 使用`unite`函数和管道轻松搞定：
+> 
+> ```R
+> dat1 <- dat %>% unite(datehour, date, hour, sep = ' ') %>% unite(datetime, datehour, min, second, sep = ':')
+> ```
+
+<a name="dplyr-other-utility"><h2>14.3. 其他数据筛选与修改操作 [<sup>目录</sup>](#content)</h2></a>
+
+数据筛选：
+
+`filter`：根据指定的条件筛选
+
+`select`：选择指定列
+
+
 
 ---
 
@@ -764,10 +937,14 @@ ALL_LIBS = $(PKG_LIBS) $(SHLIB_LIBADD) $(LIBR)# $(LIBINTL)
 
 (4) [统计之都《R 与并行计算》](https://cosx.org/2016/09/r-and-parallel-computing)
 
-(5) [R Tutorial eBook: Skewness](http://www.r-tutor.com/elementary-statistics/numerical-measures/skewness)
+(5) [【Ben Solomon】Analyzing TCR sequence Data with Atchley Factors](https://bsolomon.us/post/2018/01/13/TCR_analysis_with_Atchyley_factors.html)
 
-(6) [summarise 和 mutate 函数使用](http://xukuang.github.io/blog/2014/06/dots-in-plyr-of-r-packages/)
+(6) [R Tutorial eBook: Skewness](http://www.r-tutor.com/elementary-statistics/numerical-measures/skewness)
 
-(7) [[ERROR] R包安装的 non-zero exit](https://zhuanlan.zhihu.com/p/46077702)
+(7) [summarise 和 mutate 函数使用](http://xukuang.github.io/blog/2014/06/dots-in-plyr-of-r-packages/)
 
-(8) [【R语言】无法安装一些包](https://d.cosx.org/d/154773-154773)
+(8) [[ERROR] R包安装的 non-zero exit](https://zhuanlan.zhihu.com/p/46077702)
+
+(9) [【R语言】无法安装一些包](https://d.cosx.org/d/154773-154773)
+
+(10) [【知乎】R语言ERROR解读｜failed to lock directory](https://zhuanlan.zhihu.com/p/264363714)
