@@ -23,6 +23,9 @@
   - [14.2. summarise 和 mutate 函数使用](#dplyr-summarise-and-mutate)
   - [14.3. 其他数据筛选与修改操作](#dplyr-other-utility)
 - [15. 用do.call整理lapply的结果](#reshape-output-from-lapply)
+- [16. R与机器学习](#R-machine-learning)
+  - [16.1. 无监督学习](#R-machine-learning-unsupervised)
+    - [16.1.1. 聚类分析：Kmeans & 层次聚类](#R-machine-learning-unsupervised-clustering)
 
 
 
@@ -935,6 +938,100 @@ do.call('rbind', lapply(list, fun))
 
 即，通过`do.call`，将list的每一个元素逐一传递给`rbind`，作为它的多个输入参数，以`rbind(list[1], list[2], ...)`的形式来执行
 
+<a name="R-machine-learning"><h2>16. R与机器学习 [<sup>目录</sup>](#content)</h2></a>
+
+<a name="R-machine-learning-unsupervised"><h3>16.1. 无监督学习 [<sup>目录</sup>](#content)</h3></a>
+
+<a name="R-machine-learning-unsupervised-clustering"><h4>16.1.1. 聚类分析：Kmeans & 层次聚类 [<sup>目录</sup>](#content)</h4></a>
+
+（1）K-means
+
+```R
+#要是没有这个包的话，首先需要安装一下
+#install.packages("factoextra")
+#载入包
+library(factoextra)
+# 载入数据
+data("USArrests") 
+# 数据进行标准化
+df <- scale(USArrests) 
+# 查看数据的前五行
+head(df, n = 5)
+               Murder   Assault   UrbanPop         Rape
+Alabama    1.24256408 0.7828393 -0.5209066 -0.003416473
+Alaska     0.50786248 1.1068225 -1.2117642  2.484202941
+Arizona    0.07163341 1.4788032  0.9989801  1.042878388
+Arkansas   0.23234938 0.2308680 -1.0735927 -0.184916602
+California 0.27826823 1.2628144  1.7589234  2.067820292
+#确定最佳聚类数目
+fviz_nbclust(df, kmeans, method = "wss") + geom_vline(xintercept = 4, linetype = 2)
+```
+
+<p align=center><img src=./picture/R-advanced-MachineLearning-unsupervised-clustering-kmeans-1.png width=400/></p>
+
+```R
+#可以发现聚为四类最合适，当然这个没有绝对的，从指标上看，选择坡度变化不明显的点最为最佳聚类数目。
+#设置随机数种子，保证实验的可重复进行
+set.seed(123)
+#利用k-mean是进行聚类
+km_result <- kmeans(df, 4, nstart = 24)
+#查看聚类的一些结果
+print(km_result)
+#提取类标签并且与原始数据进行合并
+dd <- cbind(USArrests, cluster = km.res$cluster)
+head(dd)
+           Murder Assault UrbanPop Rape cluster
+Alabama      13.2     236       58 21.2       4
+Alaska       10.0     263       48 44.5       3
+Arizona       8.1     294       80 31.0       3
+Arkansas      8.8     190       50 19.5       4
+California    9.0     276       91 40.6       3
+Colorado      7.9     204       78 38.7       3
+
+#查看每一类的数目
+table(dd$cluster)
+ 1  2  3  4 
+13 16 13  8 
+#进行可视化展示
+fviz_cluster(km_result, data = df,
+             palette = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+             ellipse.type = "euclid",
+             star.plot = TRUE, 
+             repel = TRUE,
+             ggtheme = theme_minimal()
+)
+```
+
+<p align=center><img src=./picture/R-advanced-MachineLearning-unsupervised-clustering-kmeans-2.png width=400/></p>
+
+
+（2）层次聚类
+
+```R
+#先求样本之间两两相似性
+result <- dist(df, method = "euclidean")
+#产生层次结构
+result_hc <- hclust(d = result, method = "ward.D2")
+#进行初步展示
+fviz_dend(result_hc, cex = 0.6)
+```
+
+<p align=center><img src=./picture/R-advanced-MachineLearning-unsupervised-clustering-HieCluster-1.png width=400/></p>
+
+根据这个图，我们可以方便的确定聚为几类比较合适，比如我们聚为四类，并且进行可视化展示
+
+```R
+fviz_dend(result_hc, k = 4, 
+          cex = 0.5, 
+          k_colors = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+          color_labels_by_k = TRUE, 
+          rect = TRUE          
+)
+```
+
+<p align=center><img src=./picture/R-advanced-MachineLearning-unsupervised-clustering-HieCluster-2.png width=400/></p>
+
+
 ---
 
 参考资料：
@@ -958,3 +1055,5 @@ do.call('rbind', lapply(list, fun))
 (9) [【R语言】无法安装一些包](https://d.cosx.org/d/154773-154773)
 
 (10) [【知乎】R语言ERROR解读｜failed to lock directory](https://zhuanlan.zhihu.com/p/264363714)
+
+(11) [基于R语言的聚类分析（k-means,层次聚类）](https://blog.csdn.net/hfutxiaoguozhi/article/details/78828047)
