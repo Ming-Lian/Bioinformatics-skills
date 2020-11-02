@@ -26,6 +26,10 @@
 - [16. R与机器学习](#R-machine-learning)
   - [16.1. 无监督学习](#R-machine-learning-unsupervised)
     - [16.1.1. 聚类分析：Kmeans & 层次聚类](#R-machine-learning-unsupervised-clustering)
+  - [16.2. 特征工程](#R-machine-learning-feature-engineering)
+  - [16.3. 数据降维：PCA](#R-machine-learning-dimension-reduction)
+  - [16.4. 模型训练与评估：Random Forest](#R-machine-learning-randforest-train-evaluation)
+- [17. 写R包](#code-r-package)
 
 
 
@@ -1031,6 +1035,319 @@ fviz_dend(result_hc, k = 4,
 
 <p align=center><img src=./picture/R-advanced-MachineLearning-unsupervised-clustering-HieCluster-2.png width=400/></p>
 
+<a name="R-machine-learning-feature-engineering"><h4>16.2. 特征工程 [<sup>目录</sup>](#content)</h4></a>
+
+特征选择两种方法用于分析：
+
+> - （1）最少最优特征选择（minimal-optimal feature selection)识别少量特征集合（理想状况最少）给出尽可能优的分类结果；
+> 
+> - （2）所有相关特征选择（all-relevant feature selection)识别所有与分类有关的所有特征。
+
+下面分别使用Boruta和caret包：
+
+> - Boruta：它使用随机森林分类算法，测量每个特征的重要行（z score)
+> - caret：使用递归特征消除法（Recursive Feature Elimination， RFE）
+
+（1）移除冗余特征：移除高度关联的特征
+
+Caret R包提供findCorrelation函数，分析特征的关联矩阵，移除冗余特征
+
+```R
+set.seed(7)
+
+# load the library
+library(mlbench)
+library(caret)
+
+# load the data
+data(PimaIndiansDiabetes)
+
+#P calculate correlation matrix
+correlationMatrix <- cor(PimaIndiansDiabetes[,1:8])
+
+# summarize the correlation matrix
+print(correlationMatrix)
+
+# find attributes that are highly corrected (ideally >0.75)
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.5)
+
+# print indexes of highly correlated attributes
+print(highlyCorrelated)
+```
+
+（2）根据重要性进行特征排序
+
+特征重要性可以通过构建模型获取。一些模型，诸如决策树，内建有特征重要性的获取机制。另一些模型，每个特征重要性利用ROC曲线分析获取。
+
+下例加载Pima Indians Diabetes数据集，构建一个Learning Vector Quantization（LVQ）模型。varImp用于获取特征重要性。从图中可以看出glucose, mass和age是前三个最重要的特征，insulin是最不重要的特征。
+
+```R
+# ensure results are repeatable
+set.seed(7)
+
+# load the library
+library(mlbench)
+library(caret)
+
+# load the dataset
+data(PimaIndiansDiabetes)
+
+# prepare training scheme
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+
+# train the model
+model <- train(diabetes~., data=PimaIndiansDiabetes, method="lvq", preProcess="scale", trControl=control)
+
+# estimate variable importance
+importance <- varImp(model, scale=FALSE)
+
+# summarize importance
+print(importance)
+
+# plot importance
+plot(importance)
+```
+
+（3）特征选择
+
+自动特征选择用于构建不同子集的许多模型，识别哪些特征有助于构建准确模型，哪些特征没什么帮助。
+
+特征选择的一个流行的自动方法称为 递归特征消除（Recursive Feature Elimination）或RFE。
+
+下例在Pima Indians Diabetes数据集上提供RFE方法例子。随机森林算法用于每一轮迭代中评估模型的方法。该算法用于探索所有可能的特征子集。从图中可以看出当使用4个特征时即可获取与最高性能相差无几的结果。
+
+```R
+# ensure the results are repeatable
+set.seed(7)
+
+# load the library
+library(mlbench)
+library(caret)
+
+# load the data
+data(PimaIndiansDiabetes)
+
+# define the control using a random forest selection function
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+
+# run the RFE algorithm
+results <- rfe(PimaIndiansDiabetes[,1:8], PimaIndiansDiabetes[,9], sizes=c(1:8), rfeControl=control)
+
+# summarize the results
+print(results)
+
+# list the chosen features
+predictors(results)
+
+# plot the results
+plot(results, type=c("g", "o"))
+```
+
+<a name="R-machine-learning-dimension-reduction"><h4>16.3. 数据降维：PCA [<sup>目录</sup>](#content)</h4></a>
+
+R中psych包可以进行主成分分析，其分析的步骤为： 
+
+> - 判断主成分的个数； 
+>
+> - 提取主成分； 
+>
+> - 获取主成分得分； 
+>
+> - 列出主成分方程，解释主成分意义。
+
+1. 判断主成分个数
+
+psych包中的fa.parallel()函数可以判断主成分的个数，其使用格式为： 
+
+```
+fa.parallel(x, fa = , n.iter =) 
+```
+
+2. 提取主成分
+
+psych包中的principal( )函数可以根据原始数据或相关系数矩阵做主成分分析，其使用格式为：
+
+```
+principal(x, nfactors =, rotate =, scores =) 
+```
+
+分析代码和运行结果如下：
+
+```R
+library(psych)
+pc<-principal(df[,-1], nfactors = 2, score = T, rotate = "varimax")
+ 
+> pc        ### 运行结果  ####
+Principal Components Analysis
+Call: principal(r = df[, -1], nfactors = 2, rotate = "varimax", scores = T)
+Standardized loadings (pattern matrix) based upon correlation matrix
+    RC1   RC2   h2     u2
+x1 -0.07  1.00 1.00 0.0031
+x2  0.94 -0.28 0.97 0.0297
+x3  0.99  0.09 0.98 0.0175
+x4  0.99 -0.10 0.99 0.0060
+ 
+                      RC1  RC2
+SS loadings           2.86 1.09
+Proportion Var        0.71 0.27
+Cumulative Var        0.71 0.99
+Proportion Explained  0.72 0.28
+Cumulative Proportion 0.72 1.00
+ 
+Test of the hypothesis that 2 components are sufficient.
+ 
+The degrees of freedom for the null model are 6  and the objective function was 6.8
+The degrees of freedom for the model are -1  and the objective function was   0.42 
+The total number of observations was 20 with MLE Chi Square = 6.6  with prob < NA 
+ 
+Fit based upon off diagonal values = 1
+```
+
+从上述的结果中可以看出：
+
+> RC1、RC2栏包含了旋转的成分载荷(component loadings)，成分载荷是观观测变量与主成分的相关系数。成分载荷可用于解释主成分的含义。在本例中，第一主成分(RC1)与X2、X3、X4高度相关(相关值 > 0.9)，第二主成分(RC2)与X1高度相关(相关值 = 1)。
+> 
+> h2栏是成分公因子方差，是主成分对每个变量的方差解释度。U2栏是成分唯一性，是主成分无法解释变量方差的比例，其值 = 1-h2。比如，本例中，第一主成分对x2变量方差的解释为97%，2.97%不能解释。
+>  
+> SS loadings包含了与主成分相关联的特征值，其含义是与特定主成分相关联的标准化后的方差值。比如，本例中，第一主成分的值为2.86。接下来的proportion  var和cumulative  var分别为主成分对整个数据集的方差解释度和累积解释度
+
+<a name="R-machine-learning-randforest-train-evaluation"><h4>16.4. 模型训练与评估：Random Forest [<sup>目录</sup>](#content)</h4></a>
+
+测试数据：[点这里](https://archive.ics.uci.edu/ml/machine-learning-databases/car/)
+
+（1）载入数据及数据集划分
+
+```R
+library(randomForest)
+
+# 读入原始数据
+data1 <- read.csv('car.data', header = F)
+colnames(data1) <- c('BuyingPrice', 'Maintenance', 'NumDoors', 'NumPersons', 'BootSpace', 'Safety', 'Condition')
+
+> head(data1)
+  BuyingPrice Maintenance NumDoors NumPersons BootSpace Safety Condition
+1       vhigh       vhigh        2          2     small    low     unacc
+2       vhigh       vhigh        2          2     small    med     unacc
+3       vhigh       vhigh        2          2     small   high     unacc
+4       vhigh       vhigh        2          2       med    low     unacc
+5       vhigh       vhigh        2          2       med    med     unacc
+6       vhigh       vhigh        2          2       med   high     unacc
+
+# 按照7：3的比例，划分训练集与测试集（或验证集）
+set.seed(100)
+train <- sample(nrow(data1), 0.7*nrow(data1), replace = FALSE)
+TrainSet <- data1[train,]
+ValidSet <- data1[-train,]
+```
+
+（2）模型的训练
+
+我们先用默认参数来进行模型的训练：
+
+```R
+model1 <- randomForest(Condition ~ ., data = TrainSet, importance = TRUE)
+model1
+
+> model1
+
+Call:
+ randomForest(formula = Condition ~ ., data = TrainSet, importance = TRUE) 
+               Type of random forest: classification
+                     Number of trees: 500
+No. of variables tried at each split: 2
+
+        OOB estimate of  error rate: 3.64%
+Confusion matrix:
+      acc good unacc vgood class.error
+acc   253    7     4     0  0.04166667
+good    3   44     1     4  0.15384615
+unacc  18    1   837     0  0.02219626
+vgood   6    0     0    31  0.16216216
+```
+
+接着，再尝试微调模型的参数：
+
+> - **Ntree**: Number of trees to grow. This should not be set to too small a number, to ensure that every input row gets predicted at least a few times. 
+> - **Mtry**: Number of variables randomly sampled as candidates at each split. Note that the default values are different for classification (sqrt(p) where p is number of variables in x) and regression (p/3) 
+
+当我们尝试着将其中的`Mtry`参数从原先的2调为6时
+
+```R
+model2 <- randomForest(Condition ~ ., data = TrainSet, ntree = 500, mtry = 6, importance = TRUE)
+model2
+
+> model2
+
+Call:
+ randomForest(formula = Condition ~ ., data = TrainSet, ntree = 500,      mtry = 6, importance = TRUE) 
+               Type of random forest: classification
+                     Number of trees: 500
+No. of variables tried at each split: 6
+
+        OOB estimate of  error rate: 2.32%
+Confusion matrix:
+      acc good unacc vgood class.error
+acc   254    4     6     0  0.03787879
+good    3   47     1     1  0.09615385
+unacc  10    1   845     0  0.01285047
+vgood   1    1     0    35  0.05405405
+```
+
+（3）评估模型：分别用训练集和验证集
+
+先用训练集评估模型：
+
+```R
+# 用训练集评估
+predTrain <- predict(model2, TrainSet, type = "class")
+table(predTrain, TrainSet$Condition)  
+
+> table(predTrain, TrainSet$Condition)
+         
+predTrain acc good unacc vgood
+    acc   264    0     0     0
+    good    0   52     0     0
+    unacc   0    0   856     0
+    vgood   0    0     0    37
+```
+
+可以看到对于训练集的每个样本，模型都获得了准确的预测结果
+
+接着，用验证集来评估模型
+
+```R
+# 用验证集评估
+predValid <- predict(model2, ValidSet, type = "class")
+
+mean(predValid == ValidSet$Condition)                    
+table(predValid,ValidSet$Condition)
+
+> mean(predValid == ValidSet$Condition)                    
+[1] 0.9884393
+> table(predValid,ValidSet$Condition)
+         
+predValid acc good unacc vgood
+    acc   117    0     2     0
+    good    1   16     0     0
+    unacc   1    0   352     0
+    vgood   1    1     0    28
+```
+
+（4）查看各个特征对分类的贡献大小
+
+```R
+importance(model2)        
+varImpPlot(model2)        
+
+> importance(model2)        
+                  acc     good     unacc    vgood MeanDecreaseAccuracy MeanDecreaseGini
+BuyingPrice 143.90534 80.38431 101.06518 66.75835            188.10368         71.15110
+Maintenance 130.61956 77.28036  98.23423 43.18839            171.86195         90.08217
+NumDoors     32.20910 16.14126  34.46697 19.06670             49.35935         32.45190
+NumPersons  142.90425 51.76713 178.96850 49.06676            214.55381        125.13812
+BootSpace    85.36372 60.34130  74.32042 50.24880            132.20780         72.22591
+Safety      179.91767 93.56347 207.03434 90.73874            275.92450  
+```
 
 ---
 
@@ -1057,3 +1374,7 @@ fviz_dend(result_hc, k = 4,
 (10) [【知乎】R语言ERROR解读｜failed to lock directory](https://zhuanlan.zhihu.com/p/264363714)
 
 (11) [基于R语言的聚类分析（k-means,层次聚类）](https://blog.csdn.net/hfutxiaoguozhi/article/details/78828047)
+
+(12) [Feature Selection with the Caret R Package](https://machinelearningmastery.com/feature-selection-with-the-caret-r-package/)
+
+(13) [How to implement Random Forests in R](https://www.r-bloggers.com/2018/01/how-to-implement-random-forests-in-r/)
