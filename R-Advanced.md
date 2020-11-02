@@ -30,6 +30,10 @@
   - [16.3. 数据降维：PCA](#R-machine-learning-dimension-reduction)
   - [16.4. 模型训练与评估：Random Forest](#R-machine-learning-randforest-train-evaluation)
 - [17. 写R包](#code-r-package)
+- [18. tidyverse的使用](#use-tidyverse)
+  - [18.1. tibble的创建与基本操作](#tidyverse-operate-tibble)
+  - [18.2. 数据探索与可视化](#tidyverse-data-exploration-plot)
+  - [18.3. 数据重构](#tidyverse-reshape-data)
 
 
 
@@ -1349,6 +1353,331 @@ BootSpace    85.36372 60.34130  74.32042 50.24880            132.20780         7
 Safety      179.91767 93.56347 207.03434 90.73874            275.92450  
 ```
 
+<a name="code-r-package"><h2>17. 写R包 [<sup>目录</sup>](#content)</h2></a>
+
+<a name="use-tidyverse"><h2>18. tidyverse的使用 [<sup>目录</sup>](#content)</h2></a>
+
+<p align=center><img src=./picture/R-advanced-tidyverse-logo.png width=400/></p>
+
+什么是tidyverse？
+
+> - curated collection of packages for data science
+> - packages share data classes and grammar
+> - low entry threshold
+> - database-like approach
+> - aesthetically pleasing visualizations
+> - big community and great resources online
+
+<a name="tidyverse-operate-tibble"><h3>18.1. tibble的创建与基本操作 [<sup>目录</sup>](#content)</h3></a>
+
+1. 创建
+
+	创建，类似于`data.frame()`
+
+	```R
+	tb <- tibble(numbers=c(1,2,3),names=c('a','b','c'))
+
+	## # A tibble: 3 x 2
+	## numbers names
+	## <dbl> <chr>
+	## 1 1 a
+	## 2 2 b
+	## 3 3 c
+	```
+
+	tible与data.frame之间相互转换：
+
+	```R
+	# tibble -> data.frame
+	df <- as.data.frame(tb)
+	# data.frame -> tibble
+	tb <- as_tibble(df)
+	```
+
+	给tibble添加行和列
+
+	```R
+	# 添加行
+	add_row(tb, numbers=4, names="d")
+
+	## # A tibble: 4 x 2
+	## numbers names
+	## <dbl> <chr>
+	## 1 1 a
+	## 2 2 b
+	## 3 3 c
+	## 4 4 d
+
+	# 添加列
+	## 以data.frame的方式
+	tb$squres <- tb$numbersˆ2
+	## # A tibble: 4 x 3
+	## numbers names squres
+	## <dbl> <chr> <dbl>
+	## 1 1 a 1
+	## 2 2 b 4
+	## 3 3 c 9
+	## 4 4 d 16
+	## 用mutate函数
+	tb %>% mutate(cubes = squres*numbers)
+	## # A tibble: 4 x 4
+	## numbers names squres cubes
+	## <dbl> <chr> <dbl> <dbl>
+	## 1 1 a 1 1
+	## 2 2 b 4 8
+	## 3 3 c 9 27
+	## 4 4 d 16 64
+	```
+
+	读写文件：
+
+	```R
+	# 读入文件
+	## 以默认方式读入
+	countries <- read_tsv('countries.tsv')
+	## 也可指定读入的列的数据类型
+	countries <- read_tsv('countries.tsv', col_types=c(col_double(), col_character()))
+
+	# 写出文件
+	write_tsv(tb, path = "new_tibble.tsv")
+	```
+
+2. 基本操作
+
+	选择列或行：
+
+	<p align=center><img src=./picture/R-advanced-tidyverse-tibble-01.png /></p>
+
+	<p align=center>select</p>
+
+	<p align=center><img src=./picture/R-advanced-tidyverse-tibble-02.png /></p>
+
+	<p align=center>filter</p>
+
+	排序操作——arrange ：
+
+	```R
+	arrange(.data, ..., .by_group = FALSE)
+
+	# 使用desc进行逆序排序
+	penguins %>%
+	select(species, body_mass_g, flipper_length_mm) %>%
+	arrange(desc(body_mass_g)) #descending order
+	```
+
+	更改数据：
+
+	```R
+	# 使用mutate基于已有列产生新列，或修改原有的列
+
+
+	# 将某一列按照其各种离散取值拆分成多个列
+	df <- data.frame(x = c(NA, "a.b", "a.d", "b.c"))
+	df %>% separate(x, c("A", "B"))
+	#     A    B
+	# 1 <NA> <NA>
+	# 2    a    b
+	# 3    a    d
+	# 4    b    c
+
+
+	# 将多个列合并成一列
+	df <- expand_grid(x = c("a", NA), y = c("b", NA))
+	# # A tibble: 4 x 2
+	#   x     y    
+	#  <chr> <chr>
+	# 1 a     b    
+	# 2 a     NA   
+	# 3 NA    b    
+	# 4 NA    NA
+	df %>% unite("z", x:y, remove = FALSE)
+	# # A tibble: 4 x 3
+	#   z     x     y    
+	#   <chr> <chr> <chr>
+	# 1 a_b   a     b    
+	# 2 a_NA  a     NA   
+	# 3 NA_b  NA    b    
+	# 4 NA_NA NA    NA   
+	```
+
+	分组操作：
+
+	```R
+	# 使用group_by可以按照指定列的取值，将不同取值的列归到不同的分组下，以使用summarise进行后续的操作
+	#                   mpg cyl disp  hp drat    wt  qsec vs am gear carb
+	# Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
+	# Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4
+	# Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1
+	# Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
+	# Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
+	# Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1
+	mtcars %>%
+	group_by(cyl) %>%
+	summarise(mean = mean(disp), n = n())
+	```
+
+	<p align=center><img src=./picture/R-advanced-tidyverse-tibble-03.png /></p>
+
+	合并两个tibble
+
+	<p align=center><img src=./picture/R-advanced-tidyverse-tibble-04.png width=300/></p>
+
+<a name="tidyverse-data-exploration-plot"><h3>18.2. 数据探索与可视化 [<sup>目录</sup>](#content)</h3></a>
+
+基本操作示例：
+
+> 全局数据概览：
+>
+> ```R
+> glimpse(penguins)
+> ## Rows: 344
+> ## Columns: 8
+> ## $ species <fct> Adelie, Adelie, Adelie, Adelie, Adelie, Adelie, A...
+> ## $ island <fct> Torgersen, Torgersen, Torgersen, Torgersen, Torge...
+> ## $ bill_length_mm <dbl> 39.1, 39.5, 40.3, NA, 36.7, 39.3, 38.9, 39.2, 34....
+> ## $ bill_depth_mm <dbl> 18.7, 17.4, 18.0, NA, 19.3, 20.6, 17.8, 19.6, 18....
+> ## $ flipper_length_mm <int> 181, 186, 195, NA, 193, 190, 181, 195, 193, 190, ...
+> ## $ body_mass_g <int> 3750, 3800, 3250, NA, 3450, 3650, 3625, 4675, 347...
+> ## $ sex <fct> male, female, female, NA, female, male, female, m...
+> ## $ year <int> 2007, 2007, 2007, 2007, 2007, 2007, 2007, 2007, 2...
+> ```
+>
+> 重点探索某一列;
+>
+> ```R
+> penguins %>%
+>  group_by(species) %>%
+>  summarise(count=n())
+>
+> ## # A tibble: 3 x 2
+> ## species count
+> ## <fct> <int>
+> ## 1 Adelie 152
+> ## 2 Chinstrap 68
+> ## 3 Gentoo 124
+> ```
+
+进阶探索：
+
+> 查看不同企鹅物种的平均体重与平均翼展长度
+>
+> ```R
+> penguins %>%
+> group_by(species) %>%
+> summarise(mean_mass = mean(body_mass_g, na.rm=TRUE),
+> mean_flipper_length = mean(flipper_length_mm, na.rm=TRUE))
+> ```
+>
+> 查看不同企鹅物种的平均体重、最小体重和最大体重
+>
+> ```R
+> penguins %>%
+> group_by(species) %>%
+> summarise(count=n(),
+> mean_mass = mean(body_mass_g, na.rm=TRUE),
+> min_mass = min(body_mass_g, na.rm = TRUE),
+> max_mass = max(body_mass_g, na.rm = TRUE))
+> ```
+>
+> 查看不同企鹅物种每项指标的均值
+>
+> ```R
+> penguins %>%
+> group_by(species) %>%
+> summarize(across(where(is.numeric), mean, na.rm = TRUE)) %>%
+> select(-year) # remove year column from output
+> ```
+
+用ggplot2承接上游数据统计结果的可视化
+
+<p align=center><img src=./picture/R-advanced-tidyverse-data-exploration-and-plot-1.png /></p>
+
+简单的统计与可视化
+
+```R
+penguins %>%
+ group_by(species) %>%
+ summarise(count=n()) %>%
+ ggplot() +
+ geom_bar(aes(x=species, y=count, fill=species), stat="identity") +
+ geom_label(aes(x=species, y=count, label=count))
+```
+
+<p align=center><img src=./picture/R-advanced-tidyverse-data-exploration-and-plot-2.png /></p>
+
+```R
+penguins %>%
+filter(!is.na(body_mass_g) & !is.na(flipper_length_mm)) %>%
+ggplot() +
+geom_point(aes(x=body_mass_g, y=flipper_length_mm, color=species),
+size=3) + # increase size of points
+geom_smooth(aes(x=body_mass_g, y=flipper_length_mm, group=species, color=species),
+method = "lm", se=FALSE) +
+labs(x= "Body mass [g]", y= "Flipper length [mm]",
+title = "Heavier penguins have bigger wingspan", color="") +
+theme_bw() +
+theme(legend.position = "bottom") +
+scale_color_manual(values = pnw_palette("Bay",3)) # use 'color' (not 'fill') palette
+```
+
+<p align=center><img src=./picture/R-advanced-tidyverse-data-exploration-and-plot-3.png /></p>
+
+根据目的，选择合适的可视化方案
+
+<p align=center><img src=./picture/R-advanced-tidyverse-data-exploration-and-plot-4.png /></p>
+
+<a name="tidyverse-reshape-data"><h3>18.3. 数据重构 [<sup>目录</sup>](#content)</h3></a>
+
+可以使用`gather`或`spread`函数实现类似`melt`与`dcast`的功能：在长表格与短表格之间转换
+
+```R
+# 原始数据，为短表格形式
+countries
+## # A tibble: 6 x 6
+## year sex Australia Germany Poland USA
+## <dbl> <chr> <dbl> <dbl> <dbl> <dbl>
+## 1 1995 Female 9063508 41930010 19808312 134441472
+## 2 1995 Male 8990481 39730955 18779284 128313798
+## 3 2000 Female 9619222 42071655 19715504 140752000
+## 4 2000 Male 9537815 40115959 18547799 134554000
+## 5 2015 Female 11950850 41511847 19596817 163189523
+## 6 2015 Male 11826927 41362080 19608451 158229297
+
+# 将其转换为长表格
+long_countries <- countries %>%
+gather(key="country", value="population", -year, -sex)
+## # A tibble: 24 x 4
+## year sex country population
+## <dbl> <chr> <chr> <dbl>
+## 1 1995 Female Australia 9063508
+## 2 1995 Male Australia 8990481
+## 3 2000 Female Australia 9619222
+## 4 2000 Male Australia 9537815
+## 5 2015 Female Australia 11950850
+## 6 2015 Male Australia 11826927
+## 7 1995 Female Germany 41930010
+## 8 1995 Male Germany 39730955
+## 9 2000 Female Germany 42071655
+## 10 2000 Male Germany 40115959
+## # ... with 14 more rows
+
+# 将长表格转换为短表格
+long_countries %>%
+spread(key = country, value=population)
+## # A tibble: 6 x 6
+## year sex Australia Germany Poland USA
+## <dbl> <chr> <dbl> <dbl> <dbl> <dbl>
+## 1 1995 Female 9063508 41930010 19808312 134441472
+## 2 1995 Male 8990481 39730955 18779284 128313798
+## 3 2000 Female 9619222 42071655 19715504 140752000
+## 4 2000 Male 9537815 40115959 18547799 134554000
+## 5 2015 Female 11950850 41511847 19596817 163189523
+## 6 2015 Male 11826927 41362080 19608451 158229297
+```
+
+
+
+
 ---
 
 参考资料：
@@ -1378,3 +1707,5 @@ Safety      179.91767 93.56347 207.03434 90.73874            275.92450
 (12) [Feature Selection with the Caret R Package](https://machinelearningmastery.com/feature-selection-with-the-caret-r-package/)
 
 (13) [How to implement Random Forests in R](https://www.r-bloggers.com/2018/01/how-to-implement-random-forests-in-r/)
+
+(14) [github: sienkie/R_for_data_science](https://github.com/sienkie/R_for_data_science)
