@@ -34,6 +34,7 @@
   - [18.1. tibble的创建与基本操作](#tidyverse-operate-tibble)
   - [18.2. 数据探索与可视化](#tidyverse-data-exploration-plot)
   - [18.3. 数据重构](#tidyverse-reshape-data)
+- [19. numpy 与 R 计算标准差不同](#diff-std-numpy-r)
 
 
 
@@ -1675,7 +1676,21 @@ spread(key = country, value=population)
 ## 6 2015 Male 11826927 41362080 19608451 158229297
 ```
 
+<a name="diff-std-numpy-r"><h2>19. numpy 与 R 计算标准差不同 [<sup>目录</sup>](#content)</h2></a>
 
+`numpy.std()` 求标准差的时候默认是除以 n 的，即是有偏的，np.std无偏样本标准差方式为加入参数 ddof = 1，如下：
+
+```python
+np.std(x, ddof=1)
+```
+
+R中用`sd()` 求标准差的时候默认是除以 n - 1 的，即是无偏的，若想要求有偏的标准差，可以使用下面的代码
+
+```R
+ apply(x1, 2, function(x) sd(x) * sqrt((length(x) - 1) / length(x)) )
+```
+
+如果是小样本数小于30，用有偏估计，大样本用无偏估计
 
 
 ---
@@ -1709,3 +1724,7 @@ spread(key = country, value=population)
 (13) [How to implement Random Forests in R](https://www.r-bloggers.com/2018/01/how-to-implement-random-forests-in-r/)
 
 (14) [github: sienkie/R_for_data_science](https://github.com/sienkie/R_for_data_science)
+
+(15) [CSDN《【Python】 标准差计算（std）》](https://blog.csdn.net/ztf312/article/details/100559299)
+
+(16) [使用numpy和R得到不同的标准差结果](https://www.cnpython.com/qa/162365)
